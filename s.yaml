@@ -1,25 +1,27 @@
 edition: 3.0.0
-name: my-xlr-project
-access: "default"
-
+name: default
+access: default
 resources:
-  xlr_function:
+  xlr-service:
     component: fc3
     props:
       region: cn-hangzhou
-      functionName: xlr-server
-      description: "星丽仁管理后台"
-      runtime: custom.debian10
-      code: ./
-      handler: index.handler
       cpu: 0.35
-      memorySize: 512
-      timeout: 60
+      customRuntimeConfig:
+        command:
+          - npm
+          - run
+          - start
+        port: 9000
+      description: ''
+      disableOndemand: false
       diskSize: 512
-      internetAccess: true
-   
-     
-      environmentVariables:
+      environmentVariables:  
+        LD_LIBRARY_PATH: /code:/code/lib:/usr/lib:/opt/lib:/usr/local/lib
+        NODE_PATH: /opt/nodejs/node_modules
+        PATH: >-
+          /var/fc/lang/nodejs20/bin:/usr/local/bin/apache-maven/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ruby/bin:/opt/bin:/code:/code/bin
+        USER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-7xYd9L2DyfwnqXNSniBDic/sync_task"
         ARTICLE_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6iqagVWgbrZYgK8JI9X7Gh/sync_task"
         TRAINING_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6wDyIyzwC5KPQbKrFHZCv1/sync_task"
         CLINIC_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-77tUiOsBGXIM5JRyzQezyw/sync_task" 
@@ -28,25 +30,43 @@ resources:
         SCHEDULER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6FUo4O1XWeSymGwE7iMuw/sync_task"
         AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
         JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
-        SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 
+        SMS_API_URL: "./api/send-verification" 
         SMS_TEMPLATE_CODE: "SMS_498940400" # 你的阿里云短信模板ID
 
-      # === 修正点 2：补全启动命令 (非常重要) ===
-      customRuntimeConfig:
-        command:
-          - node
-          - src/index.js
-        port: 9000
-
-      # === 修正点 3：补全触发器配置 ===
+      functionArn: acs:fc:cn-hangzhou:1128326595609724:functions/xlr-service
+      functionName: xlr-service
+      handler: index.handler
+      instanceConcurrency: 20
+      instanceIsolationMode: SHARE
+      internetAccess: true
+      logConfig:
+        enableInstanceMetrics: true
+        enableRequestMetrics: true
+        logBeginRule: DefaultRegex
+        logstore: default-logs
+        project: serverless-cn-hangzhou-51f6d4d0-247d-58b1-9533-b93858a5dfc5
+      memorySize: 512
+      resourceGroupId: rg-acfmwjjzrpkai7a
+      role: ''
+      runtime: custom.debian10
+      sessionAffinity: NONE
+      timeout: 60
+      code: D:\xlr.tangmj.cn\
       triggers:
         - triggerName: defaultTrigger
           triggerType: http
+          description: ''
+          qualifier: LATEST
           triggerConfig:
-            authType: anonymous
             methods:
               - GET
               - POST
               - PUT
               - DELETE
+              - HEAD
               - OPTIONS
+              - PATCH
+            authType: function
+            disableURLInternet: false
+            environmentVariables:
+              
