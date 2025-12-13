@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星丽仁·医疗美容诊所 管理平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            
+            --md-sys-color-surface: #FDF8FD;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline-variant: #CAC4D0;
+            
+            --color-blue-bg: #E8F0FE; --color-blue-text: #1967D2;
+            --color-red-bg: #FCE8E6; --color-red-text: #C5221F;
+            --color-green-bg: #E6F4EA; --color-green-text: #137333;
+            --color-orange-bg: #FEF7E0; --color-orange-text: #EA8600;
+            --color-purple-bg: #F3E8FD; --color-purple-text: #9334E6;
+            --color-teal-bg: #E0F7FA; --color-teal-text: #007B83;
+            --color-gold-bg: #FFF8E1; --color-gold-text: #F9AB00;
+
+            --radius-l: 24px;
+            --radius-m: 16px;
+            --radius-s: 12px;
+            
+            --shadow-card: 0px 1px 3px 0px rgba(0, 0, 0, 0.12), 0px 1px 2px 0px rgba(0, 0, 0, 0.24);
+            --shadow-hover: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            min-height: 100vh;
+            padding: 24px 16px;
+            background-image: linear-gradient(to bottom, #FDF8FD 0%, #f4eff4 100%);
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1000px; 
+            margin: 0 auto;
+            transition: max-width 0.3s ease;
+        }
+        
+        /* ----- Header 修改 ----- */
+        .header {
+            margin-bottom: 24px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            /* 关键修改：两端对齐，左侧 Logo，右侧欢迎语 */
+            justify-content: space-between; 
+        }
+        
+        @media (min-width: 768px) {
+            .header {
+                margin-bottom: 32px;
+            }
+        }
+        
+        .header img {
+            height: 40px; 
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* 欢迎语样式 */
+        .welcome-msg {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            display: none; /* 默认隐藏，JS加载成功后显示 */
+        }
+
+        /* ----- Nav Section ----- */
+        .nav-section {
+            margin-bottom: 24px;
+            background: var(--md-sys-color-surface-container);
+            border-radius: var(--radius-l);
+            padding: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .nav-section {
+                padding: 32px;
+                background: #FFFFFF;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+                border: 1px solid rgba(0,0,0,0.05);
+            }
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface-variant);
+            letter-spacing: 0.1px;
+        }
+        
+        .section-icon {
+            color: var(--md-sys-color-primary);
+            font-size: 1.2rem;
+        }
+        
+        /* ----- Nav Grid ----- */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .nav-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+            }
+        }
+
+        /* ----- Nav Item Card ----- */
+        .nav-item {
+            background: #ffffff;
+            border-radius: var(--radius-m);
+            padding: 16px 8px;
+            text-align: center;
+            box-shadow: var(--shadow-card);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+        
+        .nav-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(103, 80, 164, 0.1);
+        }
+
+        .nav-item:active {
+            transform: scale(0.96);
+            box-shadow: none;
+            background: var(--md-sys-color-surface-container);
+        }
+        
+        .nav-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+            font-size: 24px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .nav-item:hover .nav-icon {
+            transform: scale(1.15) rotate(5deg);
+        }
+        
+        .nav-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            line-height: 1.3;
+            letter-spacing: 0.2px;
+        }
+
+        /* ----- Color Variants ----- */
+        .color-blue { background: var(--color-blue-bg); color: var(--color-blue-text); }
+        .color-red { background: var(--color-red-bg); color: var(--color-red-text); }
+        .color-green { background: var(--color-green-bg); color: var(--color-green-text); }
+        .color-orange { background: var(--color-orange-bg); color: var(--color-orange-text); }
+        .color-purple { background: var(--color-purple-bg); color: var(--color-purple-text); }
+        .color-teal { background: var(--color-teal-bg); color: var(--color-teal-text); }
+        .color-gold { background: var(--color-gold-bg); color: var(--color-gold-text); } 
+        .color-yellow { background: var(--color-gold-bg); color: var(--color-gold-text); } 
+
+        /* ----- Footer ----- */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            color: var(--md-sys-color-outline-variant);
+            font-size: 0.8rem;
+            border-top: 1px dashed var(--md-sys-color-outline-variant);
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 400px) {
+            body { padding: 16px 12px; }
+            .nav-grid { gap: 10px; }
+            .nav-item { height: 105px; padding: 12px 4px; }
+            .nav-icon { width: 42px; height: 42px; font-size: 20px; margin-bottom: 8px; border-radius: 14px;}
+            .nav-text { font-size: 0.8rem; }
+            .section-title { font-size: 1rem; }
+            /* 移动端欢迎语稍微小一点 */
+            .welcome-msg { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="logo_black.png" alt="星丽仁·医疗美容诊所">
+            <div id="welcome-msg" class="welcome-msg">
+                欢迎你，<span id="user-name"></span>
+            </div>
+        </div>
+        
+        <div class="nav-section">
+            <div class="section-header">
+                <i class="fas fa-file-upload section-icon"></i>
+                <div class="section-title">数据提交</div>
+            </div>
+            
+            <div class="nav-grid">
+                <a href="https://f.wps.cn/g/cZ4gSgtF" class="nav-item">
+                    <div class="nav-icon color-blue"><i class="fas fa-box-open"></i></div>
+                    <div class="nav-text">出库提交</div>
+                </a>
+                
+                <a href="https://web.wps.cn/wo/sl/v324efVp?app_id=5FjYxbZI8LcwE78ipx1mGP" class="nav-item">
+                    <div class="nav-icon color-red"><i class="fas fa-warehouse"></i></div>
+                    <div class="nav-text">入库提交</div>
+                </a>
+                
+                <a href="https://web.wps.cn/wo/sl/v31eKlYG?app_id=37fkVvYWACnV9WracLmEFf" class="nav-item">
+                    <div class="nav-icon color-purple"><i class="fa-solid fa-user-nurse"></i></div>
+                    <div class="nav-text">手工提交</div>
+                </a>
+
+                <a href="https://www.kdocs.cn/wo/sl/v14H1joR" class="nav-item">
+                    <div class="nav-icon color-gold"><i class="fa-solid fa-file-medical"></i></div>
+                    <div class="nav-text">病例提交</div>
+                </a>
+
+                <a href="https://web.wps.cn/wo/sl/v34LYlhm?app_id=2R5wmiOSlFQHKdMMTBDsNs" class="nav-item">
+                    <div class="nav-icon color-green"><i class="fas fa-user-friends"></i></div>
+                    <div class="nav-text">客户信息</div>
+                </a>
+                
+                <a href="https://web.wps.cn/wo/sl/v31wRYUn?app_id=C8D5vNx5q5AVsREFJtpEF" class="nav-item">
+                    <div class="nav-icon color-orange"><i class="fas fa-pills"></i></div>
+                    <div class="nav-text">产品信息</div>
+                </a>
+                
+                <a href="https://f.kdocs.cn/g/sNqo3udL/" class="nav-item">
+                    <div class="nav-icon color-blue"><i class="fa-solid fa-award"></i></div>
+                    <div class="nav-text">业绩提交</div>
+                </a>
+
+                <a href="https://f.wps.cn/g/GP7XH8zg" class="nav-item">
+                    <div class="nav-icon color-yellow"><i class="fa-solid fa-chalkboard-user"></i></div>
+                    <div class="nav-text">培训记录</div>
+                </a>
+
+                  <a href="./daka.html" class="nav-item">
+                    <div class="nav-icon color-teal"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="nav-text">预约提交</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-header">
+                <i class="fas fa-search section-icon"></i>
+                <div class="section-title">信息查询</div>
+            </div>
+            
+            <div class="nav-grid">
+                <a href="./manual" class="nav-item">
+                    <div class="nav-icon color-purple"><i class="fas fa-search"></i></div>
+                    <div class="nav-text">手工查询</div>
+                </a>
+                
+                <a href="https://web.wps.cn/wo/sl/v3b3WLZ?app_id=KbbFY9ws1yiHG2gfTn7Da" class="nav-item">
+                    <div class="nav-icon color-red"><i class="fas fa-clipboard-list"></i></div>
+                    <div class="nav-text">库存查询</div>
+                </a>
+                
+                  <a href="./scheduler" class="nav-item">
+                    <div class="nav-icon color-gold"><i class="fa-solid fa-calendar-days"></i></div>
+                    <div class="nav-text">排班查询</div>
+                </a>
+
+                <a href="https://web.wps.cn/wo/sl/v33G9gOV?app_id=17hOC0sbqYKK6vYrogtRPD" class="nav-item">
+                    <div class="nav-icon color-green"><i class="fa-solid fa-user"></i></div>
+                    <div class="nav-text">编号查询</div>
+                </a>
+
+                <a href="./doc" class="nav-item">
+                    <div class="nav-icon color-teal"><i class="fa-solid fa-folder-open"></i></div>
+                    <div class="nav-text">文档查询</div>
+                </a>
+
+                <a href="./training" class="nav-item">
+                    <div class="nav-icon color-blue"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div class="nav-text">培训查询</div>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 星丽仁·医疗美容诊所 管理系统</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/user/info');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.isLoggedIn) {
+                        const nameEl = document.getElementById('user-name');
+                        const msgEl = document.getElementById('welcome-msg');
+                        
+                        // 优先显示姓名，没有则显示手机号
+                        nameEl.innerText = data.name || data.phone;
+                        
+                        // 显示欢迎语区域
+                        msgEl.style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.error('获取用户信息失败', e);
+            }
+        });
+    </script>
+</body>
+</html>

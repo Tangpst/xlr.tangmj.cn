@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>预约服务</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --md-sys-color-primary: #6750A4; --md-sys-color-on-primary: #FFFFFF; --md-sys-color-primary-container: #EADDFF; --md-sys-color-on-primary-container: #21005D; --md-sys-color-surface: #FDF8FD; --md-sys-color-surface-variant: #E7E0EC; --md-sys-color-on-surface: #1C1B1F; --md-sys-color-on-surface-variant: #49454F; --md-sys-color-error: #B3261E; --md-sys-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); padding: 20px 16px; min-height: 100vh; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; padding-bottom: 40px; }
+        .header { margin-bottom: 24px; padding: 0 8px; }
+        .header h1 { font-size: 24px; font-weight: 400; margin-bottom: 8px; }
+        .header p { font-size: 14px; color: var(--md-sys-color-on-surface-variant); }
+        .input-group { position: relative; margin-bottom: 20px; background-color: var(--md-sys-color-surface-variant); border-radius: 4px 4px 0 0; border-bottom: 1px solid #8e8e8e; transition: background-color 0.2s; }
+        .input-group:focus-within { border-bottom: 2px solid var(--md-sys-color-primary); background-color: rgba(103, 80, 164, 0.08); }
+        .input-group label { position: absolute; top: 8px; left: 16px; font-size: 12px; color: var(--md-sys-color-primary); font-weight: 500; pointer-events: none; }
+        .md-input { width: 100%; border: none; background: transparent; padding: 24px 16px 8px 16px; font-size: 16px; color: var(--md-sys-color-on-surface); outline: none; appearance: none; }
+        input[type="date"], input[type="time"] { min-height: 52px; }
+        .section-title { font-size: 14px; color: var(--md-sys-color-primary); font-weight: 500; margin-bottom: 8px; display: block; padding-left: 4px; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding: 0 4px; }
+        .chip { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #79747E; font-size: 14px; color: var(--md-sys-color-on-surface-variant); cursor: pointer; transition: 0.2s; user-select: none; }
+        .chip.active { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-color: transparent; font-weight: 600; }
+        .chip .ri-check-line { margin-right: 4px; font-size: 16px; }
+        .submit-area { margin-top: 32px; }
+        .btn-submit { width: 100%; height: 56px; border-radius: 28px; background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); font-size: 16px; font-weight: 500; border: none; box-shadow: var(--md-sys-elevation-1); display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: 0.2s; }
+        .btn-submit:disabled { background-color: rgba(28, 27, 31, 0.12); color: rgba(28, 27, 31, 0.38); cursor: not-allowed; box-shadow: none; }
+        .error-toast { margin-top: 16px; color: var(--md-sys-color-error); font-size: 14px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .loading-text { font-size: 13px; color: #666; padding: 10px; text-align: center; }
+        .add-service-box { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; padding: 0 4px; }
+        .add-service-input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .add-service-btn { padding: 8px 12px; background: #eee; border: none; border-radius: 4px; color: #333; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="container">
+    <div class="header"><h1>预约服务</h1><p>Book Appointment</p></div>
+
+    <div class="input-group">
+        <label>客户姓名</label>
+        <input type="text" v-model="form.client" class="md-input" placeholder="请输入姓名">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px;">
+        <div class="input-group">
+            <label>日期</label>
+            <input type="date" v-model="form.date" class="md-input" @change="fetchDailyData">
+        </div>
+        <div class="input-group">
+            <label>开始时间</label>
+            <input type="time" v-model="form.startTime" class="md-input">
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <span class="section-title">选择技师 (可多选)</span>
+        <div v-if="loadingTechs" class="loading-text"><i class="ri-loader-4-line ri-spin"></i> 正在加载...</div>
+        <div v-else-if="availableTechs.length === 0" class="loading-text">⚠️ 今日暂无值班技师</div>
+        <div class="chips-container" v-else>
+            <div v-for="tech in availableTechs" :key="tech.id" class="chip" :class="{ active: isTechSelected(tech.id) }" @click="toggleTech(tech)">
+                <i v-if="isTechSelected(tech.id)" class="ri-check-line"></i>{{ tech.name }}
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <span class="section-title">选择服务项目 (可多选)</span>
+        <div class="chips-container">
+            <div v-for="svc in serviceList" :key="svc" class="chip" :class="{ active: form.services.includes(svc) }" @click="toggleService(svc)">
+                <i v-if="form.services.includes(svc)" class="ri-check-line"></i>{{ svc }}
+            </div>
+        </div>
+        <div class="add-service-box">
+             <input v-model="newServiceInput" class="add-service-input" placeholder="输入其他项目...">
+             <button @click="addService" class="add-service-btn">添加</button>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>总服务时长 (分钟)</label>
+        <input type="number" v-model="form.duration" class="md-input" placeholder="60">
+    </div>
+
+    <div class="submit-area">
+        <button class="btn-submit" @click="handleSubmit" :disabled="submitting || !isValid">
+            <i v-if="submitting" class="ri-loader-4-line ri-spin"></i>
+            <span v-else>确认预约</span>
+        </button>
+        <div v-if="errorMsg" class="error-toast"><i class="ri-error-warning-fill"></i> {{ errorMsg }}</div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const API_BASE = './api/scheduler'; 
+            const defaultServices = ['面部清洁', '光子嫩肤', '水光针', '身体护理'];
+            const serviceList = ref([...defaultServices]);
+            const newServiceInput = ref('');
+            const availableTechs = ref([]);
+            const existingAppointments = ref([]);
+            const loadingTechs = ref(false);
+            const submitting = ref(false);
+            const errorMsg = ref('');
+            
+            // [新增 1] 存储当前登录用户的手机号
+            const currentUserPhone = ref('');
+
+            const getToday = () => {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            };
+
+            const form = reactive({
+                client: '',
+                selectedTechs: [], 
+                services: [],      
+                duration: 60,
+                date: getToday(),
+                startTime: '10:00'
+            });
+
+            const formatDateParam = (dateStr) => dateStr ? dateStr.replace(/-/g, '/') : '';
+
+            // [新增 2] 获取当前用户信息
+            const fetchUserInfo = async () => {
+                try {
+                    const res = await fetch('/api/user/info');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.isLoggedIn && data.phone) {
+                            currentUserPhone.value = data.phone;
+                            console.log("【当前用户】", currentUserPhone.value);
+                        }
+                    }
+                } catch (e) {
+                    console.error("获取用户信息失败", e);
+                    // 不阻断流程，只是没法记录提交人
+                }
+            };
+
+            const extractRecords = (json) => {
+                if (!json || !json.success) return [];
+                if (Array.isArray(json.data) && json.data.length > 0 && json.data[0].records) {
+                    return json.data[0].records;
+                }
+                if (Array.isArray(json.data)) {
+                    return json.data;
+                }
+                return [];
+            };
+
+            const fetchDailyData = async () => {
+                if (!form.date) return;
+                loadingTechs.value = true;
+                errorMsg.value = '';
+                availableTechs.value = [];
+                existingAppointments.value = [];
+                form.selectedTechs = []; 
+
+                try {
+                    const dateParam = formatDateParam(form.date);
+                    const [techRes, apptRes] = await Promise.all([
+                        fetch(`${API_BASE}?b=1`), 
+                        fetch(`${API_BASE}?date=${dateParam}&b=0`) 
+                    ]);
+
+                    const techJson = await techRes.json();
+                    const apptJson = await apptRes.json();
+
+                    const techData = extractRecords(techJson);
+                    const uniqueTechs = new Map();
+                    techData.forEach(rec => {
+                        const f = rec.fields || rec;
+                        if (f['姓名']) {
+                            uniqueTechs.set(f['姓名'], {
+                                id: rec.id, 
+                                name: f['姓名'],
+                                department: f['部门'] || f['岗位'] || '未设置' 
+                            });
+                        }
+                    });
+                    availableTechs.value = Array.from(uniqueTechs.values());
+
+                    const rawAppts = extractRecords(apptJson);
+                    existingAppointments.value = rawAppts.filter(rec => {
+                        const f = rec.fields || rec;
+                        return f && f['客户姓名'];
+                    });
+
+                } catch (e) {
+                    console.error(e);
+                    errorMsg.value = "数据加载失败: " + e.message;
+                } finally {
+                    loadingTechs.value = false;
+                }
+            };
+
+            const toggleTech = (tech) => {
+                const idx = form.selectedTechs.findIndex(t => t.id === tech.id);
+                if (idx > -1) form.selectedTechs.splice(idx, 1);
+                else form.selectedTechs.push(tech);
+            };
+            const isTechSelected = (id) => form.selectedTechs.some(t => t.id === id);
+
+            const toggleService = (svc) => {
+                const idx = form.services.indexOf(svc);
+                if (idx > -1) form.services.splice(idx, 1);
+                else form.services.push(svc);
+            };
+            const addService = () => {
+                const val = newServiceInput.value.trim();
+                if(val && !serviceList.value.includes(val)){
+                    serviceList.value.push(val);
+                    form.services.push(val);
+                    newServiceInput.value = '';
+                }
+            };
+
+            const timeToMin = (str) => {
+                const [h, m] = str.split(':').map(Number);
+                return h * 60 + m;
+            };
+
+            const formatMinToTime = (totalMin) => {
+                 const h = Math.floor(totalMin / 60);
+                 const m = totalMin % 60;
+                 return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            };
+
+            const checkConflict = () => {
+                const newStart = timeToMin(form.startTime);
+                const newEnd = newStart + parseInt(form.duration);
+
+                if (newStart > 22 * 60) throw new Error("预约时间不能晚于 22:00");
+                if (newStart < 8 * 60) throw new Error("预约时间不能早于 08:00");
+
+                form.selectedTechs.forEach(selectedTech => {
+                    const techAppts = existingAppointments.value.filter(rec => {
+                        const f = rec.fields || rec; 
+                        const techIds = f['选择技师']; 
+                        const techName = f['技师&护士'];
+
+                        const currentTechIdStr = String(selectedTech.id);
+                        let hasId = false;
+                        if (Array.isArray(techIds)) {
+                            hasId = techIds.map(String).includes(currentTechIdStr);
+                        }
+
+                        let hasName = false;
+                        if (Array.isArray(techName)) hasName = techName.includes(selectedTech.name);
+                        else hasName = techName === selectedTech.name;
+
+                        return hasId || hasName;
+                    });
+
+                    techAppts.forEach(appt => {
+                        const f = appt.fields || appt;
+                        const oldTimeStr = f['预约时间'];
+                        if (!oldTimeStr) return;
+
+                        const oldStart = timeToMin(oldTimeStr);
+                        const rawDuration = f['时长'];
+                        const duration = parseInt(rawDuration);
+                        let oldEnd = f['结束时间'] ? timeToMin(f['结束时间']) : (oldStart + duration);
+
+                        if (newStart < oldEnd && newEnd > oldStart) {
+                            throw new Error(`冲突警告：技师【${selectedTech.name}】在 ${oldTimeStr} 已有预约 (至 ${formatMinToTime(oldEnd)})。`);
+                        }
+                    });
+                });
+            };
+
+            const handleSubmit = async () => {
+                submitting.value = true;
+                errorMsg.value = '';
+                
+                try {
+                    checkConflict();
+
+                    const departmentsArray = form.selectedTechs.map(t => t.department);
+
+                    // 2. 构造提交数据
+                    const payload = {
+                        date: formatDateParam(form.date),
+                        client: form.client,
+                        techIds: form.selectedTechs.map(t => t.id),
+                        departments: departmentsArray,
+                        services: form.services,
+                        startTime: form.startTime,
+                        duration: Number(form.duration),
+                        // [新增 3] 增加提交人字段
+                        submitter: currentUserPhone.value 
+                    };
+
+                    console.log("【调试】提交 Payload:", JSON.stringify(payload, null, 2));
+
+                    const res = await fetch(API_BASE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const resText = await res.text();
+                    let json;
+                    try {
+                        json = JSON.parse(resText);
+                    } catch (e) {
+                        throw new Error(`服务器报错 (非JSON): ${res.status} ${res.statusText}`);
+                    }
+
+                    if (!res.ok || !json.success) {
+                        throw new Error(json.error || json.message || "预约写入未知失败");
+                    }
+
+                    alert("预约成功！");
+                    
+                    form.client = '';
+                    form.selectedTechs = [];
+                    form.services = [];
+                    fetchDailyData(); 
+
+                } catch (e) {
+                    console.error("【调试】错误:", e);
+                    errorMsg.value = "提交失败: " + e.message;
+                } finally {
+                    submitting.value = false;
+                }
+            };
+
+            const isValid = computed(() => {
+                return form.client && form.selectedTechs.length > 0 && form.services.length > 0 && form.startTime && form.duration > 0;
+            });
+
+            onMounted(() => {
+                // 页面挂载时，并行执行：1.获取数据 2.获取当前用户信息
+                fetchDailyData();
+                fetchUserInfo();
+            });
+
+            return { form, availableTechs, serviceList, loadingTechs, submitting, errorMsg, newServiceInput, addService, toggleTech, isTechSelected, toggleService, handleSubmit, isValid, fetchDailyData };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

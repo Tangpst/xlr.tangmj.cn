@@ -1,0 +1,56 @@
+edition: 3.0.0
+name: my-xlr-project
+access: "default" # 对应刚才 s config add 设置的密钥别名
+
+resources:
+  xlr_function:
+    component: fc3 # 使用 FC 3.0 组件
+    props:
+      region: cn-hangzhou # 你的函数所在的区域，比如 cn-hongkong, cn-hangzhou
+      functionName: xlr-server # 你的函数名
+      description: "星丽仁管理后台"
+      runtime: custom.debian10 # 自定义运行时
+      code: ./ # 上传当前目录下的所有文件
+      handler: index.handler # 对于 custom runtime 其实没用，但要填
+      cpu: 0.35 # 0.35 核
+      memorySize: 512
+      timeout: 60
+      diskSize: 512
+      internetAccess: true
+      layers:
+        - acs:fc:cn-hangzhou:official:layers/Nodejs20/versions/1
+      
+      # 环境变量 (把 wrangler.toml 里的都搬过来)
+      environmentVariables:
+      ARTICLE_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6iqagVWgbrZYgK8JI9X7Gh/sync_task"
+      TRAINING_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6wDyIyzwC5KPQbKrFHZCv1/sync_task"
+      CLINIC_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-77tUiOsBGXIM5JRyzQezyw/sync_task" 
+      SERCH_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-2HSy7VhnRalXjDmBstGHJD/sync_task"
+      MANUAL_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/297063958621/script/V2-4NWEWtVHZYz1p7S2eHNF8A/sync_task"
+      SCHEDULER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6FUo4O1XWeSymGw4btc1HB/sync_task"
+      USER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-7xYd9L2DyfwnqXNSniBDic/sync_task"
+      AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
+      JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
+      SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 
+      SMS_TEMPLATE_CODE: "SMS_498940400" # 你的阿里云短信模板ID
+       
+
+      # 启动命令 (非常重要)
+      customRuntimeConfig:
+        command:
+          - node
+          - src/index.js # 你的入口文件路径
+        port: 9000
+
+      # 触发器配置 (自动配置 HTTP 触发器)
+      triggers:
+        - triggerName: defaultTrigger
+          triggerType: http
+          triggerConfig:
+            authType: anonymous # 无需认证
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS

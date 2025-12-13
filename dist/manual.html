@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的绩效 - 星丽仁系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* MD3 风格样式 (保持不变) */
+        :root { --md-sys-color-primary: #6750A4; --md-sys-color-on-primary: #FFFFFF; --md-sys-color-primary-container: #EADDFF; --md-sys-color-on-primary-container: #21005D; --md-sys-color-surface: #FDF8FD; --md-sys-color-surface-variant: #E7E0EC; --md-sys-color-on-surface: #1C1B1F; --md-sys-color-on-surface-variant: #49454F; --md-sys-color-error: #B3261E; --radius-m: 16px; --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', 'Noto Sans SC', sans-serif; background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); min-height: 100vh; padding: 20px 16px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; }
+        .header { margin-bottom: 24px; text-align: left; }
+        .header h1 { font-size: 24px; font-weight: 400; margin-bottom: 4px; }
+        .header p { font-size: 14px; color: var(--md-sys-color-on-surface-variant); }
+        .user-badge { display: inline-flex; align-items: center; background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 4px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; margin-top: 8px; }
+        .user-badge i { margin-right: 6px; }
+        .loading-state { text-align: center; padding: 60px 20px; color: var(--md-sys-color-on-surface-variant); display: none; }
+        .loading-state.active { display: block; }
+        .spinner { font-size: 32px; color: var(--md-sys-color-primary); animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .error-state { text-align: center; padding: 40px 20px; color: var(--md-sys-color-error); display: none; background: #FFF8F7; border-radius: var(--radius-m); border: 1px solid #F4B8B5; }
+        .error-state.active { display: block; }
+        .receipt-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-1); position: relative; background-image: radial-gradient(circle at 0 100%, transparent 8px, #fff 9px), radial-gradient(circle at 100% 100%, transparent 8px, #fff 9px); background-position: bottom left, bottom right; background-size: 50% 100%; background-repeat: no-repeat; padding-bottom: 12px; display: none; animation: slideUp 0.4s ease; }
+        .receipt-card.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .receipt-header { background: var(--md-sys-color-primary); color: white; padding: 24px; text-align: center; }
+        .receipt-header h2 { font-size: 1.2rem; font-weight: 500; margin: 0; }
+        .receipt-header .sub { font-size: 0.8rem; opacity: 0.8; margin-top: 4px; }
+        .receipt-body { padding: 24px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
+        .info-label { color: var(--md-sys-color-on-surface-variant); }
+        .info-val { color: var(--md-sys-color-on-surface); font-weight: 500; text-align: right; }
+        .divider-dashed { border-top: 2px dashed #E0E0E0; margin: 16px 0; }
+        .item-list { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .item-list th { text-align: left; color: var(--md-sys-color-on-surface-variant); font-size: 0.8rem; padding-bottom: 8px; font-weight: 500; }
+        .item-list td { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; color: var(--md-sys-color-on-surface); vertical-align: top; }
+        .item-list tr:last-child td { border-bottom: none; }
+        .item-list .money { text-align: right; font-family: monospace; font-weight: 500; }
+        .total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--md-sys-color-on-surface); }
+        .total-label { font-weight: 700; font-size: 1rem; }
+        .total-amount { font-size: 1.5rem; font-weight: 700; color: var(--md-sys-color-primary); }
+        .refresh-btn { margin-top: 20px; width: 100%; padding: 12px; background: transparent; border: 1px solid var(--md-sys-color-on-surface-variant); border-radius: 24px; color: var(--md-sys-color-on-surface-variant); font-size: 14px; cursor: pointer; display: none; }
+        .receipt-card.active + .refresh-btn { display: block; }
+        
+        .debug-info { margin-top: 20px; font-size: 12px; color: #999; word-break: break-all; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>绩效查询</h1>
+        <p>Performance Record</p>
+        <div id="userBadge" class="user-badge" style="display:none;">
+            <i class="ri-user-smile-line"></i> <span id="displayUserName">...</span>
+        </div>
+    </div>
+
+    <div id="loading" class="loading-state active">
+        <i class="ri-loader-4-line spinner"></i>
+        <p>正在获取您的最新数据...</p>
+    </div>
+
+    <div id="error" class="error-state">
+        <i class="ri-error-warning-line" style="font-size: 32px; margin-bottom: 10px;"></i>
+        <p id="errorText">加载失败</p>
+        <button onclick="location.reload()" style="margin-top:15px; padding:8px 20px; border:none; background:#B3261E; color:white; border-radius:4px;">重试</button>
+        <div id="debugBox" class="debug-info"></div>
+    </div>
+
+    <div id="receipt" class="receipt-card">
+        <div class="receipt-header">
+            <h2>星丽仁 · 绩效明细</h2>
+            <div class="sub">Performance Receipt</div>
+        </div>
+        <div class="receipt-body" id="receiptContent"></div>
+    </div>
+    
+    <button class="refresh-btn" onclick="location.reload()">
+        <i class="ri-refresh-line"></i> 刷新数据
+    </button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const errorTextEl = document.getElementById('errorText');
+        const receiptEl = document.getElementById('receipt');
+        const receiptContentEl = document.getElementById('receiptContent');
+        const userBadgeEl = document.getElementById('userBadge');
+        // [修改] 获取显示姓名的元素
+        const displayUserNameEl = document.getElementById('displayUserName');
+        const debugBox = document.getElementById('debugBox');
+
+        const showError = (msg, debugData) => {
+            loadingEl.classList.remove('active');
+            receiptEl.classList.remove('active');
+            errorEl.classList.add('active');
+            errorTextEl.innerText = msg;
+            if (debugData) {
+                debugBox.style.display = 'block';
+                debugBox.innerText = "Debug: " + JSON.stringify(debugData).substring(0, 300);
+            }
+        };
+
+        const showData = (html) => {
+            loadingEl.classList.remove('active');
+            errorEl.classList.remove('active');
+            receiptContentEl.innerHTML = html;
+            receiptEl.classList.add('active');
+        };
+
+        const formatDate = (dateValue) => {
+            if (!dateValue) return '';
+            const num = parseFloat(String(dateValue).replace(/[^\d.]/g, ''));
+            if (!isNaN(num) && num > 20000 && num < 60000) {
+                const date = new Date((num - (25567 + 2))*86400*1000);
+                return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+            }
+            return String(dateValue).split('T')[0];
+        };
+
+        try {
+            // 1. 登录检查
+            const userRes = await fetch('/api/user/info');
+            if (userRes.status === 401) { window.location.href = '/login.html'; return; }
+            const userData = await userRes.json();
+            if (!userData.isLoggedIn || !userData.phone) { window.location.href = '/login.html'; return; }
+
+            // [修改] 优先显示姓名，没有姓名则显示手机号
+            displayUserNameEl.innerText = userData.name || userData.phone;
+            userBadgeEl.style.display = 'inline-flex';
+
+            // 2. 发起查询
+            const dataRes = await fetch('/api/v4', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    phonenum: userData.phone,
+                    code: "AUTO_LOGIN" 
+                })
+            });
+            const json = await dataRes.json();
+
+            // 只要 Worker 返回成功 (success=true 或 verify=1)，就渲染
+            if (json.verify === 1 || json.success === true) {
+                renderReceiptOldStyle(json.data);
+            } else {
+                showError(json.message || "未找到数据", json);
+            }
+
+        } catch (e) {
+            console.error(e);
+            showError("网络连接错误");
+        }
+
+        // === 核心：恢复“老代码”的解析逻辑 ===
+        function renderReceiptOldStyle(data) {
+            let list = [];
+            
+            // 1. 数据解包 (找到那个二维数组)
+            if (Array.isArray(data)) list = data;
+            else if (data && typeof data === 'object') {
+                 // 优先找 data.result 或 data.data
+                 if (Array.isArray(data.result)) list = data.result;
+                 else if (Array.isArray(data.data)) list = data.data;
+                 else {
+                     // 暴力查找
+                     for(let k in data) {
+                         if(Array.isArray(data[k])) { list = data[k]; break; }
+                     }
+                 }
+            }
+
+            // 2. 如果解包出来是空，或者不是数组
+            if (!list || !Array.isArray(list) || list.length === 0) {
+                showError("返回数据格式异常 (非数组)", data);
+                return;
+            }
+
+            // 3. 处理嵌套 (有些接口返回 [[...]])
+            if (list.length === 1 && Array.isArray(list[0])) list = list[0];
+
+            // === 严格遵照“老代码”逻辑 ===
+            // 规则：
+            // Row 1 (Index 1): 汇总行 [姓名, 开始日期, 结束日期, 总金额]
+            // Row 3 (Index 3) 开始: 数据行 [项目名, 次数, 备注, 金额]
+            
+            // 4. 读取汇总行
+            const summaryRow = list[1] || [];
+            const empName = summaryRow[0] || '未知';
+            const start = formatDate(summaryRow[1]);
+            const end = formatDate(summaryRow[2]);
+            const grandTotal = parseFloat(summaryRow[3]) || 0;
+
+            // 5. 循环读取明细 (从第4行/Index 3开始)
+            let itemsHtml = '';
+            // 如果数据行数少于4行，说明没有明细
+            if (list.length > 3) {
+                for (let i = 3; i < list.length; i++) {
+                    const row = list[i];
+                    if (!row || !Array.isArray(row)) continue;
+                    
+                    // 老逻辑：[0]=项目, [1]=次数, [3]=金额
+                    const name = row[0];
+                    if (!name || name === '总计') continue; // 跳过空行或总计行
+
+                    const count = row[1] || 0;
+                    const subtotal = parseFloat(row[3]) || 0;
+
+                    itemsHtml += `
+                        <tr>
+                            <td>
+                                <div style="font-weight:500;">${name}</div>
+                                <div style="font-size:0.8rem; color:#666;">服务: ${count}次</div>
+                            </td>
+                            <td class="money">¥ ${subtotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+            }
+
+            // 6. 渲染 HTML
+            const html = `
+                <div class="info-row">
+                    <span class="info-label">员工号码：</span>
+                    <span class="info-val">${empName}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">统计周期</span>
+                    <span class="info-val" style="font-size:0.85rem">${start} - ${end}</span>
+                </div>
+
+                <div class="divider-dashed"></div>
+
+                <table class="item-list">
+                    <thead>
+                        <tr>
+                            <th>项目</th>
+                            <th style="text-align:right">业绩</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml || '<tr><td colspan="2" style="text-align:center; padding:20px 0; color:#999;">无明细记录</td></tr>'}
+                    </tbody>
+                </table>
+
+                <div class="divider-dashed"></div>
+
+                <div class="total-row">
+                    <span class="total-label">合计业绩</span>
+                    <span class="total-amount">¥ ${grandTotal.toFixed(2)}</span>
+                </div>
+            `;
+            
+            showData(html);
+        }
+    });
+</script>
+
+</body>
+</html>

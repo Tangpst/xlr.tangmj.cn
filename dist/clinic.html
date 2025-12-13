@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>复诊病例打印系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* =========================================
+           1. Material Design 3 风格定义 (新)
+           ========================================= */
+        :root {
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+
+            --md-sys-color-surface: #FDF8FD;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            
+            --radius-l: 24px;
+            --radius-m: 16px;
+            --radius-s: 8px;
+            
+            --shadow-2: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 全局布局 */
+        body { 
+            font-family: 'Roboto', 'Noto Sans SC', "SimSun", serif; /* 界面优先用无衬线，打印部分会覆盖为宋体 */
+            background-color: var(--md-sys-color-surface-container); /* 深一点的背景衬托纸张 */
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        /* --- 左侧侧边栏 (MD3 风格) --- */
+        .sidebar {
+            width: 320px;
+            background: #fff;
+            border-right: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-header h2 {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin: 0 0 8px 0;
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        .date-badge {
+            font-size: 0.85rem;
+            color: var(--md-sys-color-primary);
+            background: var(--md-sys-color-primary-container);
+            padding: 4px 12px;
+            border-radius: var(--radius-s);
+            display: inline-block;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* 搜索框 */
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--radius-s);
+            font-family: inherit; font-size: 0.9rem;
+            background: transparent;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+        .search-input:focus {
+            outline: none; border-color: var(--md-sys-color-primary); border-width: 2px;
+            padding-left: 39px; padding-top: 11px; padding-bottom: 11px; /* 调整内边距以保持高度一致 */
+        }
+        .search-icon {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--md-sys-color-outline);
+        }
+
+        /* 列表区域 */
+        .patient-list-wrapper { 
+            position: relative;
+            flex: 1;
+            overflow: hidden; 
+            margin: 0 -12px; /* 扩展滚动区域 */
+            padding: 0 12px;
+        }
+
+        .patient-list { 
+            list-style: none; padding: 0; margin: 0; 
+            overflow-y: auto; height: 100%; 
+            padding-right: 4px; /* 给滚动条留空 */
+        }
+
+        .patient-item {
+            padding: 16px;
+            margin-bottom: 8px;
+            border-radius: var(--radius-m);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            border: 1px solid transparent;
+            background: var(--md-sys-color-surface);
+        }
+
+        .patient-item:hover { 
+            background-color: var(--md-sys-color-surface-container); 
+        }
+
+        .patient-item.active { 
+            background-color: var(--md-sys-color-secondary-container); 
+            color: var(--md-sys-color-on-secondary-container);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .patient-item .time { 
+            font-size: 0.75rem; 
+            opacity: 0.7; 
+            margin-bottom: 4px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        
+        .patient-item .name { 
+            font-weight: 500; 
+            font-size: 1rem; 
+        }
+
+        /* 底部按钮区 */
+        .sidebar-actions {
+            padding-top: 20px;
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+            margin-top: auto;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .btn-tonal {
+            background-color: var(--md-sys-color-secondary-container); 
+            color: var(--md-sys-color-on-secondary-container);
+            border: none; padding: 12px;
+            border-radius: 24px;
+            cursor: pointer; font-size: 0.9rem; font-weight: 500;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: filter 0.2s;
+            width: 100%;
+            font-family: inherit;
+        }
+        .btn-tonal:hover { filter: brightness(0.95); }
+
+        /* 加载动画 (MD3 风格) */
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none; 
+            justify-content: center; align-items: center;
+            z-index: 20; flex-direction: column;
+            color: var(--md-sys-color-primary);
+        }
+        .loading-overlay.visible { display: flex; }
+        .spinner {
+            border: 3px solid var(--md-sys-color-surface-container);
+            border-top: 3px solid var(--md-sys-color-primary);
+            border-radius: 50%; width: 32px; height: 32px;
+            animation: spin 1s linear infinite; margin-bottom: 12px;
+        }
+
+        /* --- 主内容区 (背景与布局) --- */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- 打印按钮 (悬浮 FAB) --- */
+        .fab-print {
+            position: fixed;
+            bottom: 32px; right: 32px;
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 1rem; font-weight: 500;
+            box-shadow: var(--shadow-2);
+            cursor: pointer;
+            display: flex; align-items: center; gap: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 100;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .fab-print:hover {
+            transform: translateY(-2px);
+            background-color: #523E85;
+        }
+
+        /* =========================================
+           2. 打印区域样式 (严格保留原样，不做修改)
+           ========================================= */
+        
+        /* --- 病历单据样式 (A4纸模拟) --- */
+        .medical-record {
+            width: 210mm;
+            background: white;
+            padding: 10mm;
+            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* 稍微优化阴影使其更立体 */
+            position: relative;
+            color: #000;
+            font-family: "SimSun", "Songti SC", serif; /* 确保纸张内部强制使用宋体 */
+            margin-bottom: 80px; /* 给底部悬浮按钮留出空间 */
+        }
+
+        /* 标题部分 */
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid #000; 
+            padding-bottom: 10px; 
+            margin-bottom: 10px; 
+            position: relative; 
+        }
+        .header h1 { 
+            font-size: 18px; 
+            margin: 0; 
+            display: inline-block; 
+            letter-spacing: 5px; 
+            font-weight: bold;
+        }
+        .header .tag { 
+            position: absolute; 
+            top: -2px; 
+            right: 0; 
+            border: 1px solid #000; 
+            padding: 2px 5px; 
+            font-size: 14px; 
+            font-weight: normal;
+        }
+
+        /* 表单行通用样式 */
+        .row { 
+            display: flex; 
+            align-items: baseline; 
+            margin-bottom: 4px; 
+            flex-wrap: wrap; 
+        }
+        .label { 
+            font-weight: normal; 
+            white-space: nowrap; 
+            margin-right: 2px; 
+        }
+        .input-line { 
+            border-bottom: 1px solid #000; 
+            flex-grow: 1; 
+            min-height: 18px; 
+            line-height: 18px; 
+            padding: 0 5px; 
+            display: inline-block; 
+            box-sizing: border-box;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: clip; 
+        }
+        .w-short { width: 45px; flex-grow: 0; }
+        .w-med { width: 80px; flex-grow: 0; }
+        .w-long { flex: 1; } 
+        
+        .full-line { width: 100%; margin-bottom: 4px; }
+        .full-line .input-line { width: 100%; flex: none; display: block; min-height: 18px; box-sizing: border-box; }
+
+        /* --- 底部签字样式 --- */
+        .footer { 
+            margin-top: 40px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: baseline; 
+            font-size: 13px; 
+            width: 100%; 
+        }
+        .footer-item { display: flex; align-items: baseline; white-space: nowrap; }
+        .footer-line {
+            border-bottom: 1px solid #000; display: inline-block;
+            min-height: 18px; line-height: 18px; padding: 0 5px;
+            box-sizing: border-box; flex-shrink: 0; margin: 0 2px;
+        }
+        .footer-sign-line { width: 100px; }
+        .footer-date-line { width: 50px; }
+        
+        /* 可编辑区域交互 (保持原样，只优化鼠标样式) */
+        .input-line[contenteditable="true"], .footer-line[contenteditable="true"] {
+            background-color: transparent; 
+            transition: background-color 0.1s; cursor: text;
+        }
+        .input-line[contenteditable="true"]:hover, .footer-line[contenteditable="true"]:hover {
+             background-color: rgba(0,0,0,0.03);
+        }
+        .input-line[contenteditable="true"]:focus, .footer-line[contenteditable="true"]:focus {
+            outline: none; background-color: rgba(103, 80, 164, 0.05); /* 微弱的紫色聚焦背景 */
+        }
+
+        /* ---------------------------------------------------------------------- */
+        /* 打印专用样式 (严格保留原样) */
+        /* ---------------------------------------------------------------------- */
+        @media print {
+            body {
+                background: white; height: auto; display: block; overflow: visible;
+                font-size: 10pt !important; margin: 0; padding: 0;
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+            }
+            .sidebar, .fab-print { display: none !important; } /* 隐藏新按钮和侧边栏 */
+            
+            .main-content { padding: 0; margin: 0 auto; display: block; width: 100%; }
+            .medical-record {
+                width: 100%; box-shadow: none; padding: 5mm 10mm; margin: 0; page-break-inside: avoid;
+            }
+            
+            * { color: #000 !important; box-sizing: border-box; font-family: "SimSun", "Songti SC", serif !important; }
+            
+            .medical-record, .medical-record .row, .medical-record .label, 
+            .medical-record .input-line, .medical-record .footer-item {
+                font-size: 10pt !important; line-height: 1.3 !important; 
+            }
+            .header h1 { font-size: 16pt !important; }
+
+            .input-line, .footer-line {
+                border-bottom: 1px solid #000 !important; background-color: white !important; 
+                box-shadow: none !important; white-space: normal; overflow: visible; text-overflow: clip;
+            }
+            .row { page-break-inside: avoid; }
+            .full-line .input-line { min-height: 18pt; line-height: 1.3 !important; }
+
+            @page { size: A4 portrait; margin: 5mm !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fa-solid fa-calendar-check" style="color: var(--md-sys-color-primary)"></i> 复诊列表</h2>
+            <div class="date-badge" id="date-display"></div>
+        </div>
+        
+        <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="输入姓名搜索...">
+        </div>
+
+        <div class="patient-list-wrapper">
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div>正在同步数据...</div>
+            </div>
+            
+            <ul class="patient-list" id="patientList">
+                </ul>
+        </div>
+        
+        <div class="sidebar-actions">
+            <button class="btn-tonal" onclick="fetchPatientData(true)">
+                <i class="fa-solid fa-rotate"></i> 刷新列表
+            </button>
+            <div style="text-align: center; margin-top: 8px;">
+                <a href="index.html" style="color: var(--md-sys-color-outline); text-decoration: none; font-size: 0.8rem;">返回主页</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <button class="fab-print" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> 打印单据
+        </button>
+
+        <div class="medical-record" id="recordArea">
+            <div class="header" style="display: flex; align-items: center;">
+                <img src="LOGO.jpg" alt="Logo" style="height: 60px; margin-right: 20px;">
+                <div>
+                    <h1>病历记录（复诊）</h1>
+                    <div class="tag">复诊</div>
+                </div>
+            </div>
+            
+            <div class="row" style="margin-bottom: 10px;">
+                <span class="label">就诊时间：</span>
+                <span class="input-line w-short" id="visitYear" contenteditable="true"></span> 年
+                <span class="input-line w-short" id="visitMonth" contenteditable="true"></span> 月
+                <span class="input-line w-short" id="visitDay" contenteditable="true"></span> 日
+                <span class="input-line w-short" id="visitHour" contenteditable="true"></span> 时
+                <span class="input-line w-short" id="visitMinute" contenteditable="true"></span> 分
+            </div>
+
+            <div class="row">
+                <span class="label">就医者姓名：</span><span class="input-line" style="flex: 2" id="pName" contenteditable="true"></span>
+                <span class="label" style="margin-left: 15px;">性别：</span><span class="input-line w-short" id="pGender" contenteditable="true"></span>
+                <span class="label" style="margin-left: 15px;">年龄：</span><span class="input-line w-short" id="pAge" contenteditable="true"></span> 岁
+                <span class="label" style="margin-left: 15px;">病历号：</span><span class="input-line w-med" id="pID" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">主 诉（就诊意愿）：</span>
+                <span class="input-line w-long" id="chiefComplaint" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">现病史：</span>
+                <span class="input-line w-long" id="history" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">对上次治疗后评价：</span>
+                <span style="margin-right: 15px;"><span style="display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 3px;"></span>满意</span>
+                <span style="margin-right: 15px;"><span style="display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 3px;"></span>一般</span>
+                <span style="margin-right: 15px;"><span style="display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 3px;"></span>待改进</span>
+                <span style="margin-right: 15px;"><span style="display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 3px;"></span>不满意</span>
+                <span class="input-line" style="flex: 1;" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">目前服用药物：</span>
+                <span class="input-line w-long" id="currentMeds" contenteditable="true"></span>
+            </div>
+
+            <div class="row" style="margin-bottom: 15px;">
+                <span class="label">婚育史：</span><span class="input-line" style="flex:1" id="marriageHistory" contenteditable="true"></span>
+                <span class="label" style="margin-left:10px">月经史：</span><span class="input-line" style="flex:1" id="menstrualHistory" contenteditable="true"></span>
+                <span class="label" style="margin-left:10px">是否备孕：</span><span class="input-line" style="flex:0.5" id="pregnancyPrep" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">专科检查：</span>
+                体温：<span class="input-line w-short" id="vTemp" contenteditable="true"></span> ℃
+                脉搏：<span class="input-line w-short" id="vPulse" contenteditable="true"></span> 次/分
+                呼吸：<span class="input-line w-short" id="vBreath" contenteditable="true"></span> 次/分
+                血压：<span class="input-line w-short" id="vBpHigh" contenteditable="true"></span> / <span class="input-line w-short" id="vBpLow" contenteditable="true"></span> mmHg
+            </div>
+            
+            <div class="row"> 
+                <span class="label">（可附页）</span>
+                <span class="input-line w-long" id="examDetails" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row">
+                <span class="label">辅助检查结果：（可附页）</span>
+                <span class="input-line w-long" id="auxCheck" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row">
+                <span class="label">诊断：</span>
+                <span class="input-line w-long" id="diagnosis" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">治疗方案：</span>
+                <span class="input-line w-long" id="treatmentPlan" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+
+            <div class="row">
+                <span class="label">注意事项：（可附页）</span>
+                <span class="input-line w-long" id="precautions" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+
+            <div class="row" style="margin-bottom: 40px;">
+                <span class="label">复诊计划：</span>
+                <span class="input-line w-long" id="nextVisitPlan" contenteditable="true"></span>
+            </div>
+
+            <div class="footer">
+                <div class="footer-item">
+                    就医者确认签字：<span class="footer-line footer-sign-line" contenteditable="true"></span>
+                </div>
+                <div class="footer-item">
+                    医师签字：<span class="footer-line footer-sign-line" id="docSign" contenteditable="true"></span>
+                </div>
+                <div class="footer-item">
+                    签字时间：<span class="footer-line footer-date-line" style="width: 30px;" contenteditable="true"></span>年
+                    <span class="footer-line footer-date-line" style="width: 30px;" contenteditable="true"></span>月 <span class="footer-line footer-date-line" style="width: 30px;" contenteditable="true"></span>日
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------------------------------------------
+        // 1. API 与数据处理 (保持不变)
+        // -------------------------------------------------------------
+        let patientData = [];
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const listContainer = document.getElementById('patientList');
+
+        async function fetchPatientData(isReload = false, searchName = '') {
+            loadingOverlay.classList.add('visible');
+            listContainer.innerHTML = ''; 
+
+            try {
+                let apiUrl = './api/v3';
+                if (searchName) apiUrl += `?name=${encodeURIComponent(searchName)}`;
+                
+                const response = await fetch(apiUrl, { method: 'GET', headers: {'Content-Type': 'application/json'} });
+                if (!response.ok) throw new Error('网络响应错误');
+
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    let allRecords = [];
+                    if (Array.isArray(result.data)) {
+                        result.data.forEach(dataItem => {
+                            if (dataItem.records && Array.isArray(dataItem.records)) {
+                                allRecords = allRecords.concat(dataItem.records);
+                            }
+                        });
+                    }
+                    
+                    patientData = allRecords.map(item => ({...item.fields, id: item.id}));
+                    renderList(patientData);
+                    
+                    if (patientData.length > 0) {
+                        selectPatient(0);
+                    } else {
+                        listContainer.innerHTML = `
+                            <li style="text-align:center; padding:30px; color:var(--md-sys-color-outline);">
+                                <i class="fa-regular fa-folder-open" style="font-size:24px; margin-bottom:10px; display:block;"></i>
+                                ${searchName ? '没有找到相关病历' : '今日暂无提交病例'}
+                            </li>`;
+                        clearRecordArea(); 
+                    }
+                } else {
+                    throw new Error(result.message || '数据获取失败');
+                }
+            } catch (error) {
+                console.error('API Error:', error);
+                listContainer.innerHTML = `
+                    <li style="text-align:center; padding:20px; color:#B3261E;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 数据加载失败
+                    </li>`;
+            } finally {
+                loadingOverlay.classList.remove('visible');
+            }
+        }
+
+        function clearRecordArea() {
+            document.querySelectorAll('#recordArea .input-line, #recordArea .footer-line').forEach(el => el.innerText = '');
+        }
+
+        function searchPatient() {
+            const searchName = document.getElementById('searchInput').value.trim();
+            fetchPatientData(false, searchName);
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchPatient();
+        });
+
+        window.onload = function() {
+            document.getElementById('date-display').innerText = new Date().toLocaleDateString('zh-CN');
+            fetchPatientData();
+        };
+
+        function getStringValue(value) {
+            if (Array.isArray(value)) return value.map(v => (v !== null && v !== undefined ? String(v) : '')).join(' ');
+            return (value !== undefined && value !== null) ? String(value) : '';
+        }
+
+        function renderList(data) {
+            listContainer.innerHTML = '';
+            data.forEach((patient, index) => {
+                const visitTime = getStringValue(patient.visitTime) || getStringValue(patient['就诊时间']) || getStringValue(patient['就诊日期']) || '未记录日期';
+                const name = getStringValue(patient.name) || getStringValue(patient['就医者姓名']) || '未记录姓名';
+
+                const li = document.createElement('li');
+                li.className = 'patient-item';
+                li.onclick = () => selectPatient(index);
+                li.innerHTML = `
+                    <div class="time"><i class="fa-regular fa-clock" style="font-size:10px;"></i> ${visitTime}</div>
+                    <div class="name">${name}</div>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        function measureAndFillMultiLine(startElementId, numLines, text) {
+            const startElement = document.getElementById(startElementId);
+            if (!startElement) return;
+
+            const allLines = [startElement];
+            let currentParent = startElement.closest('.row'); 
+            let nextRow = currentParent.nextElementSibling;
+            
+            for(let i = 1; i < numLines; i++) {
+                if (nextRow && nextRow.classList.contains('full-line')) {
+                    const inputSpan = nextRow.querySelector('.input-line');
+                    if (inputSpan) allLines.push(inputSpan); else break; 
+                } else break;
+                nextRow = nextRow.nextElementSibling;
+            }
+
+            const availableWidth = startElement.offsetWidth; 
+            if (availableWidth <= 0) {
+                allLines.forEach(line => line.innerText = '');
+                return;
+            }
+
+            const measuringSpan = document.createElement('span');
+            const computedStyle = window.getComputedStyle(startElement);
+            ['fontFamily','fontSize','fontWeight','letterSpacing','padding'].forEach(p => measuringSpan.style[p] = computedStyle[p]);
+            measuringSpan.style.whiteSpace = 'nowrap';
+            measuringSpan.style.visibility = 'hidden';
+            measuringSpan.style.position = 'absolute';
+            document.body.appendChild(measuringSpan);
+
+            let remainingText = text.replace(/\s+/g, ' ').trim(); 
+            const chunks = [];
+
+            for (let i = 0; i < numLines && remainingText.length > 0; i++) {
+                let lineText = '';
+                let left = 0, right = remainingText.length, maxLength = 0;
+                
+                while (left <= right) {
+                    const mid = Math.floor((left + right) / 2);
+                    measuringSpan.textContent = remainingText.substring(0, mid);
+                    if (measuringSpan.offsetWidth <= availableWidth) {
+                        maxLength = mid;
+                        left = mid + 1;
+                    } else right = mid - 1;
+                }
+                
+                if (maxLength === 0 && remainingText.length > 0) maxLength = 1;
+                lineText = remainingText.substring(0, maxLength);
+                remainingText = remainingText.substring(maxLength).trimStart();
+                chunks.push(lineText);
+            }
+            document.body.removeChild(measuringSpan);
+            allLines.forEach((line, idx) => line.innerText = chunks[idx] !== undefined ? chunks[idx] : '');
+        }
+
+        function selectPatient(index) {
+            const data = patientData[index];
+            if (!data) return clearRecordArea();
+            
+            document.querySelectorAll('.patient-item').forEach((i, idx) => {
+                if (idx === index) i.classList.add('active'); else i.classList.remove('active');
+            });
+
+            const visitTimeStr = getStringValue(data.visitTime) || getStringValue(data['就诊时间']) || getStringValue(data['就诊日期']);
+            const visitDate = new Date(visitTimeStr);
+            
+            if (!isNaN(visitDate.getTime())) {
+                document.getElementById('visitYear').innerText = visitDate.getFullYear();
+                document.getElementById('visitMonth').innerText = visitDate.getMonth() + 1;
+                document.getElementById('visitDay').innerText = visitDate.getDate();
+                document.getElementById('visitHour').innerText = visitDate.getHours().toString().padStart(2, '0');
+                document.getElementById('visitMinute').innerText = visitDate.getMinutes().toString().padStart(2, '0');
+            }
+
+            // Fill basic fields
+            const setVal = (id, keys) => {
+                let val = '';
+                for(let k of keys) { val = getStringValue(data[k]); if(val) break; }
+                document.getElementById(id).innerText = val;
+            };
+
+            setVal('pName', ['name', '就医者姓名']);
+            setVal('pGender', ['gender', '性别']);
+            setVal('pAge', ['age', '年龄']);
+            setVal('pID', ['medicalId', '病历号']);
+            setVal('currentMeds', ['currentMeds', '目前服用药物']);
+            setVal('marriageHistory', ['marriageHistory', '婚育史']);
+            setVal('menstrualHistory', ['menstrualHistory', '月经史']);
+            setVal('pregnancyPrep', ['pregnancyPrep', '是否备孕']);
+            setVal('vTemp', ['vTemp', '体温']);
+            setVal('vPulse', ['vPulse', '脉搏']);
+            setVal('vBreath', ['vBreath', '呼吸']);
+            setVal('vBpHigh', ['vBpHigh', '血压高压']);
+            setVal('vBpLow', ['vBpLow', '血压低压']);
+            setVal('docSign', ['docSign', '医师签字']);
+
+            // Fill multi-line fields
+            const fillMulti = (id, lines, keys, prefix='') => {
+                let val = '';
+                for(let k of keys) { val = getStringValue(data[k]); if(val) break; }
+                measureAndFillMultiLine(id, lines, prefix + val);
+            };
+
+            fillMulti('chiefComplaint', 5, ['chiefComplaint', '主诉（就诊意愿）：', '主诉']);
+            fillMulti('history', 5, ['history', '现病史'], '求美者自述');
+            fillMulti('examDetails', 3, ['examDetails', '专科检查']);
+            fillMulti('auxCheck', 2, ['auxCheck', '辅助检查结果']);
+            fillMulti('diagnosis', 2, ['diagnosis', '诊断']);
+            fillMulti('treatmentPlan', 3, ['treatment', '治疗方案', '处理方案']);
+            fillMulti('precautions', 2, ['precautions', '注意事项']);
+
+            const nextVisit = getStringValue(data.nextVisitPlan) || getStringValue(data['复诊计划']);
+            document.getElementById('nextVisitPlan').innerText = nextVisit + ' 不适随诊，一月复诊';
+        }
+    </script>
+</body>
+</html>

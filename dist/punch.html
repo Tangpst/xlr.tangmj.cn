@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>上班打卡</title>
+    <style>
+        /* 样式保持不变，为了美观保留 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            padding: 20px; 
+            text-align: center; 
+            background-color: #f4f6f8; 
+            color: #333;
+        }
+        .card { 
+            background: white; 
+            padding: 30px 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
+            margin-top: 40px; 
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        h1 { margin: 0 0 25px 0; font-size: 24px; color: #2c3e50; }
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 14px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            font-size: 17px; 
+            font-weight: 600;
+            cursor: pointer; 
+            margin-top: 15px; 
+            transition: background 0.2s;
+        }
+        .btn:active { background: #0056b3; }
+        .btn:disabled { background: #cfd8dc; cursor: not-allowed; }
+        input { 
+            padding: 12px; 
+            width: 85%; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            outline: none;
+            text-align: center;
+        }
+        input:focus { border-color: #007bff; }
+        #status { 
+            margin-top: 25px; 
+            min-height: 20px; 
+            font-size: 15px; 
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .success-box { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error-box { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .hidden { display: none !important; }
+        .user-info { font-size: 18px; margin-bottom: 20px; color: #555; }
+        .user-phone { font-weight: bold; color: #333; }
+        .switch-account {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #999;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>📅 每日签到</h1>
+    
+    <div id="input-area">
+        <p style="color:#666; margin-bottom:15px;">请输入手机号绑定员工身份</p>
+        <input type="tel" id="phonenum" placeholder="请输入11位手机号" maxlength="11">
+        <button class="btn" onclick="bindUser()" style="background:#28a745;">绑定手机号</button>
+    </div>
+
+    <div id="action-area" class="hidden">
+        <div class="user-info">
+            当前用户: <span class="user-phone" id="display-phone"></span>
+        </div>
+        <button id="checkin-btn" class="btn" onclick="submitCheckIn()">📍 点击签到</button>
+        
+        <div onclick="resetUser()" class="switch-account">切换账号</div>
+    </div>
+
+    <div id="status"></div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'worker_checkin_phone';
+
+    window.onload = function() {
+        const storedPhone = localStorage.getItem(STORAGE_KEY);
+        if (storedPhone) {
+            showCheckinArea(storedPhone);
+        }
+    };
+
+    function bindUser() {
+        const phoneInput = document.getElementById('phonenum');
+        const phone = phoneInput.value.trim();
+
+        if(!/^1[3-9]\d{9}$/.test(phone)) {
+            alert("请输入正确的11位手机号码");
+            return;
+        }
+
+        localStorage.setItem(STORAGE_KEY, phone);
+        showCheckinArea(phone);
+    }
+
+    function showCheckinArea(phone) {
+        document.getElementById('input-area').classList.add('hidden');
+        document.getElementById('action-area').classList.remove('hidden');
+        document.getElementById('display-phone').innerText = phone;
+        document.getElementById('status').className = ''; 
+        document.getElementById('status').innerHTML = '';
+    }
+
+    function resetUser() {
+        if(confirm('确定要切换手机号吗？')) {
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('input-area').classList.remove('hidden');
+            document.getElementById('action-area').classList.add('hidden');
+            document.getElementById('phonenum').value = '';
+            document.getElementById('status').innerHTML = '';
+            document.getElementById('status').className = '';
+        }
+    }
+
+    // --- 核心修改：直接提交，不请求定位 ---
+    async function submitCheckIn() {
+        const statusDiv = document.querySelector('#status');
+        const btn = document.querySelector('#checkin-btn');
+        const userId = localStorage.getItem(STORAGE_KEY);
+        
+        btn.disabled = true;
+        statusDiv.className = '';
+        statusDiv.textContent = '🚀 正在提交数据...';
+
+        try {
+            const response = await fetch('/api/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId,
+                    timestamp: Date.now()
+                    // 不需要传 lat/lon 了
+                })
+            });
+
+            const result = await response.json();
+            
+            if(result.status === 'success') {
+                statusDiv.className = 'success-box';
+                statusDiv.innerHTML = `<strong>✅ ${result.message}</strong>`;
+            } else {
+                showError(result.message);
+            }
+        } catch (err) {
+            showError('网络请求失败，请检查网络');
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function showError(msg) {
+        const statusDiv = document.querySelector('#status');
+        statusDiv.className = 'error-box';
+        statusDiv.innerHTML = `<strong>❌ 失败:</strong> ${msg}`;
+    }
+</script>
+</body>
+</html>

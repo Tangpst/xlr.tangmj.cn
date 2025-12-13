@@ -1,0 +1,52 @@
+edition: 3.0.0
+name: my-xlr-project
+access: "default"
+
+resources:
+  xlr_function:
+    component: fc3
+    props:
+      region: cn-hangzhou
+      functionName: xlr-server
+      description: "星丽仁管理后台"
+      runtime: custom.debian10
+      code: ./
+      handler: index.handler
+      cpu: 0.35
+      memorySize: 512
+      timeout: 60
+      diskSize: 512
+      internetAccess: true
+   
+     
+      environmentVariables:
+        ARTICLE_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6iqagVWgbrZYgK8JI9X7Gh/sync_task"
+        TRAINING_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6wDyIyzwC5KPQbKrFHZCv1/sync_task"
+        CLINIC_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-77tUiOsBGXIM5JRyzQezyw/sync_task" 
+        SERCH_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-2HSy7VhnRalXjDmBstGHJD/sync_task"
+        MANUAL_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/297063958621/script/V2-4NWEWtVHZYz1p7S2eHNF8A/sync_task"
+        SCHEDULER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6FUo4O1XWeSymGwE7iMuw/sync_task"
+        AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
+        JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
+        SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 
+        SMS_TEMPLATE_CODE: "SMS_498940400" # 你的阿里云短信模板ID
+
+      # === 修正点 2：补全启动命令 (非常重要) ===
+      customRuntimeConfig:
+        command:
+          - node
+          - src/index.js
+        port: 9000
+
+      # === 修正点 3：补全触发器配置 ===
+      triggers:
+        - triggerName: defaultTrigger
+          triggerType: http
+          triggerConfig:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS

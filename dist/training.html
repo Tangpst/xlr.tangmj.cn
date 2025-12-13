@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>培训信息记录表</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* MD3 Color Tokens - Purple Theme */
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-on-primary-container: #21005D;
+            
+            --md-sys-color-secondary-container: #E8DEF8;
+            --md-sys-color-on-secondary-container: #1D192B;
+
+            --md-sys-color-surface: #FDF8FD;
+            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-outline-variant: #CAC4D0;
+            
+            --radius-l: 24px;
+            --radius-m: 16px;
+            --radius-s: 8px;
+            
+            --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+            --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+            padding: 24px 16px;
+            line-height: 1.5;
+        }
+        
+        /* Quick Access FAB */
+        .home-quick-access {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+        }
+        
+        .home-link {
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            padding: 0 20px;
+            height: 48px;
+            border-radius: var(--radius-l);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow-1);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .home-link:hover {
+            box-shadow: var(--shadow-2);
+            transform: translateY(-1px);
+            background-color: #E2D6FA; 
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-top: 20px;
+        }
+        
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        /* Filter Card */
+        .filters-card {
+            background-color: #fff;
+            padding: 24px;
+            border-radius: var(--radius-l);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+            box-shadow: var(--shadow-1);
+            margin-bottom: 24px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-item label {
+            font-size: 0.85rem;
+            color: var(--md-sys-color-on-surface-variant);
+            font-weight: 500;
+            margin-left: 4px;
+        }
+        
+        /* MD3 Input Styles */
+        .md-input {
+            padding: 10px 16px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--radius-s);
+            font-family: inherit;
+            font-size: 0.95rem;
+            background: transparent;
+            color: var(--md-sys-color-on-surface);
+            transition: border-color 0.2s;
+        }
+        
+        .md-input:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            padding: 9px 15px; /* Adjust for border width change */
+        }
+        
+        .reset-button {
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            border: none;
+            padding: 0 24px;
+            height: 44px; /* Align with inputs */
+            border-radius: var(--radius-l);
+            cursor: pointer;
+            font-weight: 500;
+            font-family: inherit;
+            transition: all 0.2s;
+            margin-top: 24px; /* Align with input boxes */
+            display: flex; align-items: center; gap: 8px;
+        }
+        
+        .reset-button:hover {
+            background-color: #D0BCFF; /* Darker secondary */
+            box-shadow: var(--shadow-1);
+        }
+        
+        /* Table Styles */
+        .table-card {
+            background: #fff;
+            border-radius: var(--radius-l);
+            box-shadow: var(--shadow-1);
+            overflow: hidden; /* For rounded corners */
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 75vh;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        
+        th {
+            background-color: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface);
+            font-weight: 600;
+            padding: 16px;
+            text-align: left; /* MD style prefers left align usually, but center is fine */
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 0.9rem;
+        }
+        
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+        
+        tr:last-child td { border-bottom: none; }
+        
+        tr:hover {
+            background-color: var(--md-sys-color-surface-container);
+        }
+        
+        /* Thumbnails */
+        .thumb-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            background-color: var(--md-sys-color-surface-container);
+            background-size: cover;
+            background-position: center;
+            cursor: zoom-in;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .thumb-box:hover { transform: scale(1.05); }
+        
+        .thumb-sig {
+            width: 100px; height: 50px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-color: transparent;
+            border: none;
+        }
+        
+        /* Status & Loading */
+        .status-area {
+            padding: 24px;
+            text-align: center;
+            color: var(--md-sys-color-outline);
+        }
+        
+        .spinner {
+            width: 32px; height: 32px;
+            border: 3px solid var(--md-sys-color-surface-container);
+            border-top: 3px solid var(--md-sys-color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Modal */
+        .image-modal {
+            display: none;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+        
+        .modal-content {
+            max-width: 90%; max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        .close-btn {
+            position: absolute; top: 20px; right: 30px;
+            color: rgba(255,255,255,0.8);
+            font-size: 2rem; cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-btn:hover { color: #fff; }
+
+        .footer {
+            text-align: center; margin-top: 40px;
+            color: var(--md-sys-color-outline-variant);
+            font-size: 0.8rem;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .filters-card { padding: 16px; flex-direction: column; align-items: stretch; gap: 16px; }
+            .filter-item { width: 100%; min-width: unset; }
+            .reset-button { margin-top: 8px; width: 100%; justify-content: center; }
+            .header h1 { font-size: 1.5rem; }
+            
+            /* Adjust floating button for mobile header */
+            .home-quick-access {
+                top: auto; bottom: 24px; right: 24px; /* Move to bottom right on mobile for easier reach */
+            }
+            .home-link {
+                height: 56px; padding: 0 24px;
+                border-radius: 16px;
+                box-shadow: var(--shadow-2);
+            }
+        }
+    </style>
+</head>
+<body> 
+    
+    <div class="home-quick-access">
+        <a href="index.html" class="home-link">
+           <i class="fa-regular fa-hospital"></i>
+           <span>主页</span>
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fa-solid fa-chalkboard-user" style="color: var(--md-sys-color-primary); margin-right: 12px;"></i>
+                培训信息记录表
+            </h1>
+        </div>
+        
+        <div class="filters-card">
+            <div class="filter-item">
+                <label for="training-date">培训日期</label>
+                <input type="date" id="training-date" class="md-input">
+            </div>
+            
+            <div class="filter-item">
+                <label for="training-type">培训类型</label>
+                <select id="training-type" class="md-input">
+                    <option value="">全部类型</option>
+                    <option value="院感培训">院感培训</option> 
+                    <option value="急救培训">产品培训</option>
+                    <option value="技能培训">技能培训</option>
+                    <option value="产品培训">入职培训</option>
+                </select>
+            </div>
+            
+            <button class="reset-button" id="reset-btn">
+                <i class="fa-solid fa-rotate-right"></i> 重置筛选
+            </button>
+        </div>
+        
+        <div class="table-card">
+            <div class="table-container">
+                <table id="training-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>类型</th>
+                            <th>时长</th>
+                            <th>主题</th>
+                            <th style="text-align: center">现场照片</th>
+                            <th style="text-align: center">记录单</th>
+                            <th style="text-align: center">签名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div class="status-area" id="api-status">
+                <div class="spinner"></div>
+                <div>正在同步数据...</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 星丽仁·医疗美容诊所 Management System</p>
+        </div>
+    </div>
+
+    <div id="imageModal" class="image-modal">
+        <span class="close-btn" onclick="closeImageModal()">&times;</span> 
+        <img id="modalImage" class="modal-content">
+        <div id="loadingText" style="color: white; margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const tableBody = document.getElementById('table-body');
+        const apiStatus = document.getElementById('api-status');
+        const resetBtn = document.getElementById('reset-btn');
+        const dateFilter = document.getElementById('training-date');
+        const typeFilter = document.getElementById('training-type');
+        
+        // Modal Elements
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const loadingText = document.getElementById('loadingText');
+        
+        let allTrainingData = [];
+        
+        // Format Excel serial date to YYYY/MM/DD
+        function formatDateString(dateStr) {
+            const baseDate = new Date(1899, 11, 31);
+            baseDate.setUTCDate(baseDate.getUTCDate() + dateStr);
+            const year = baseDate.getUTCFullYear();
+            const month = String(baseDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(baseDate.getUTCDate()).padStart(2, '0');            
+            return `${year}/${month}/${day}`;
+        }
+        
+        // Generate Photo Thumbnail
+        function generatePhotoCell(photoUrl, isSignature = false) {
+            if (!photoUrl) return '<span style="color:#ccc">-</span>';
+            
+            const className = isSignature ? 'thumb-box thumb-sig' : 'thumb-box';
+            
+            return `
+                <div style="display:flex; justify-content:center;">
+                    <div class="${className}" style="background-image: url('${photoUrl}')" 
+                         onclick="showImageModal('${photoUrl}')" title="点击预览大图">
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show Modal
+        function showImageModal(url) {
+            if (!url) return;
+            modalImage.style.display = 'none';
+            loadingText.textContent = '加载中...';
+            imageModal.style.display = 'flex';
+            
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                modalImage.src = url;
+                modalImage.style.display = 'block';
+                loadingText.textContent = '';
+            };
+            tempImg.onerror = function() {
+                loadingText.textContent = '无法加载图片';
+            };
+            tempImg.src = url;
+        }
+        
+        function closeImageModal() {
+            imageModal.style.display = 'none';
+            modalImage.src = '';
+        }
+        
+        imageModal.addEventListener('click', function(e) {
+            if (e.target === imageModal || e.target.classList.contains('close-btn')) {
+                closeImageModal();
+            }
+        });
+        
+        // Render Table
+        function renderTable(data) {
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--md-sys-color-outline);">
+                            <i class="fa-regular fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display:block;"></i>
+                            没有找到相关记录
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                const formattedDate = formatDateString(item[1]);
+                
+                // Data Structure:
+                // [0]:Raw Date, [1]:Serial Date, [2]:Type, [3]:Duration, 
+                // [4]:Topic, [5]:Photo, [6]:Record Sheet, [7]:Signature
+                
+                row.innerHTML = `
+                    <td style="font-family: monospace; font-size: 0.9rem">${formattedDate || '-'}</td>
+                    <td><span style="background:var(--md-sys-color-secondary-container); color:var(--md-sys-color-on-secondary-container); padding:4px 8px; border-radius:8px; font-size:0.85rem;">${item[2] || '-'}</span></td>
+                    <td>${item[3] || '0'} min</td>
+                    <td style="font-weight: 500">${item[4] || '-'}</td>
+                    <td>${generatePhotoCell(item[5])}</td>
+                    <td>${generatePhotoCell(item[6])}</td>
+                    <td>${generatePhotoCell(item[7], true)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Fetch API
+        async function fetchData() {
+            try {
+                const response = await fetch('api/v2');
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+                
+                const data = await response.json();
+                if (!data.success || !Array.isArray(data.data)) throw new Error('Invalid Data');
+                
+                allTrainingData = data.data;
+                renderTable(allTrainingData);
+                
+                apiStatus.innerHTML = `<span style="color: var(--md-sys-color-primary); font-size: 0.9rem"><i class="fa-solid fa-check"></i> 数据已更新 (${allTrainingData.length} 条)</span>`;
+                apiStatus.style.padding = "16px";
+                
+            } catch (error) {
+                console.error(error);
+                apiStatus.innerHTML = `<span style="color: #BA1A1A"><i class="fa-solid fa-circle-exclamation"></i> 加载失败: ${error.message}</span>`;
+            }
+        }
+        
+        // Filters
+        function applyFilters() {
+            const dateValue = dateFilter.value;
+            const typeValue = typeFilter.value;
+            
+            const filteredData = allTrainingData.filter(item => {
+                const formattedDate = formatDateString(item[1]);
+                // Convert formatted YYYY/MM/DD to YYYY-MM-DD for comparison
+                const formattedDateStandard = formattedDate.replace(/\//g, '-');
+                
+                if (dateValue && formattedDateStandard.substring(0, 10) !== dateValue) return false;
+                if (typeValue && item[2] !== typeValue) return false;
+                
+                return true;
+            });
+            
+            renderTable(filteredData);
+            
+            if (filteredData.length < allTrainingData.length) {
+                apiStatus.innerHTML = `<span>显示 ${filteredData.length} 条筛选结果</span>`;
+            }
+        }
+        
+        function resetFilters() {
+            dateFilter.value = '';
+            typeFilter.selectedIndex = 0;
+            renderTable(allTrainingData);
+            apiStatus.innerHTML = `<span>共 ${allTrainingData.length} 条记录</span>`;
+        }
+        
+        dateFilter.addEventListener('change', applyFilters);
+        typeFilter.addEventListener('change', applyFilters);
+        resetBtn.addEventListener('click', resetFilters);
+        
+        // Init
+        fetchData();
+        
+        window.showImageModal = showImageModal;
+        window.closeImageModal = closeImageModal;
+    </script>
+</body>
+</html>
