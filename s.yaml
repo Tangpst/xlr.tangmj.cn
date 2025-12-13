@@ -30,7 +30,7 @@ resources:
         SCHEDULER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6FUo4O1XWeSymGwE7iMuw/sync_task"
         AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
         JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
-        SMS_API_URL: "./api/send-verification" 
+        SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 
         SMS_TEMPLATE_CODE: "SMS_498940400" # 你的阿里云短信模板ID
 
       functionArn: acs:fc:cn-hangzhou:1128326595609724:functions/xlr-service
