@@ -125,16 +125,19 @@ async function handleWpsRequest(request, requestBody) {
   }
 }
 
+// 替换原来的 createJsonParams
 function createJsonParams(data, status) {
-  return new Response(JSON.stringify(data), {
+  const bodyStr = data ? JSON.stringify(data) : null;
+  return {
     status: status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": '*',
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    },
-  });
+    // 保持和 scheduler.js 一致，使用 Map
+    headers: new Map([
+      ['Content-Type', 'application/json; charset=utf-8'],
+      ['Access-Control-Allow-Origin', '*'],
+      ['Access-Control-Allow-Methods', 'GET, POST, OPTIONS'],
+      ['Access-Control-Allow-Headers', 'Content-Type, Authorization']
+    ]),
+    text: async () => bodyStr
+  };
 }
-
 module.exports = { handleWpsRequest };

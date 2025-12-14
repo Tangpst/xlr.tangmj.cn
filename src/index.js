@@ -7,7 +7,7 @@ const { handleSchedulerRequest } = require('./scheduler.js');
 const { Auth, Jwt } = require('./auth.js');
 
 // CommonJS 兼容 __dirname
-const __dirname = path.dirname(require.main.filename);
+//const __dirname = path.dirname(require.main.filename);
 
 const app = express();
 
