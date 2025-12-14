@@ -3,21 +3,21 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(fonts/noto-sans-sc-400.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Noto Sans SC';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(fonts/noto-sans-sc-500.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-3FnYw.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Noto Sans SC';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url(fonts/noto-sans-sc-700.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/notosanssc/v39/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Roboto';
@@ -25,7 +25,7 @@
   font-weight: 400;
   font-stretch: normal;
   font-display: swap;
-  src: url(fonts/roboto-400.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/roboto/v50/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmT.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Roboto';
@@ -33,7 +33,7 @@
   font-weight: 500;
   font-stretch: normal;
   font-display: swap;
-  src: url(fonts/roboto-500.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/roboto/v50/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWub2bWmT.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Roboto';
@@ -41,5 +41,5 @@
   font-weight: 700;
   font-stretch: normal;
   font-display: swap;
-  src: url(fonts/roboto-700.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/roboto/v50/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWuYjammT.ttf) format('truetype');
 }

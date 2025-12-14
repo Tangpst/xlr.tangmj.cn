@@ -16,8 +16,14 @@ resources:
       description: ''
       disableOndemand: false
       diskSize: 512
+      
+      # 【修改点】layers 必须放在 props 下面，不能放在环境变量里
+      layers:
+        - acs:fc:cn-hangzhou:1128326595609724:layers/xingliren/versions/3
+
       environmentVariables:  
         LD_LIBRARY_PATH: /code:/code/lib:/usr/lib:/opt/lib:/usr/local/lib
+        # 这一行确保代码能找到层里的依赖
         NODE_PATH: /opt/nodejs/node_modules
         PATH: >-
           /var/fc/lang/nodejs20/bin:/usr/local/bin/apache-maven/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ruby/bin:/opt/bin:/code:/code/bin
@@ -31,7 +37,7 @@ resources:
         AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
         JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
         SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 
-        SMS_TEMPLATE_CODE: "SMS_498940400" # 你的阿里云短信模板ID
+        SMS_TEMPLATE_CODE: "SMS_498940400"
 
       functionArn: acs:fc:cn-hangzhou:1128326595609724:functions/xlr-service
       functionName: xlr-service
@@ -68,5 +74,3 @@ resources:
               - PATCH
             authType: function
             disableURLInternet: false
-            environmentVariables:
-              
