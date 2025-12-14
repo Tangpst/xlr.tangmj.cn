@@ -1,4 +1,5 @@
 // src/index.js (最终完美版)
+import dotenv from 'dotenv';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
@@ -6,6 +7,9 @@ import { fileURLToPath } from 'url';
 import { handleWpsRequest } from './wps_routes.js';
 import { handleSchedulerRequest } from './scheduler.js';
 import { Auth, Jwt } from './auth.js';
+
+// 加载环境变量
+dotenv.config();
 
 // ESM 兼容 __dirname
 const __filename = fileURLToPath(import.meta.url);

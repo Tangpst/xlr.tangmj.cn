@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>预约服务</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="assets/google-fonts.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/font-awesome.css">
     
     <style>
         :root { --md-sys-color-primary: #6750A4; --md-sys-color-on-primary: #FFFFFF; --md-sys-color-primary-container: #EADDFF; --md-sys-color-on-primary-container: #21005D; --md-sys-color-surface: #FDF8FD; --md-sys-color-surface-variant: #E7E0EC; --md-sys-color-on-surface: #1C1B1F; --md-sys-color-on-surface-variant: #49454F; --md-sys-color-error: #B3261E; --md-sys-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15); }
@@ -100,7 +100,7 @@
 
     createApp({
         setup() {
-            const API_BASE = './api/scheduler'; 
+            const API_BASE = '/api/scheduler'; 
             const defaultServices = ['面部清洁', '光子嫩肤', '水光针', '身体护理'];
             const serviceList = ref([...defaultServices]);
             const newServiceInput = ref('');

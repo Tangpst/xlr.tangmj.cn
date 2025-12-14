@@ -23,6 +23,7 @@ export async function handleSchedulerRequest(request, parsedBody) {
         b: parseInt(searchParams.get('b') || 0) 
       };
       airScriptPayload = { Context: { argv } };
+      console.log("【调试】GET请求参数:", JSON.stringify(argv));
     } 
     
     // [POST] 写入模式
@@ -42,24 +43,81 @@ export async function handleSchedulerRequest(request, parsedBody) {
     }
 
     // === 3. 请求 WPS AirScript ===
-    const res = await fetch(air_url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "AirScript-Token": process.env.AIRSCRIPT_TOKEN,
-      },
-      body: JSON.stringify(airScriptPayload),
-    });
-
-    const resBody = await res.json();
-    let result = resBody?.data?.result ?? null;
+    console.log("【调试】调用WPS AirScript API，URL:", air_url);
+    console.log("【调试】请求头:", { "Content-Type": "application/json", "AirScript-Token": process.env.AIRSCRIPT_TOKEN });
+    console.log("【调试】请求体:", JSON.stringify(airScriptPayload));
     
-    // 解析 WPS 可能返回的字符串化 JSON
-    if (typeof result === "string") {
-      try { result = JSON.parse(result); } catch (e) {
-        console.error("解析 AirScript 结果失败", e);
+    let result = null;
+    
+    try {
+      const res = await fetch(air_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "AirScript-Token": process.env.AIRSCRIPT_TOKEN,
+        },
+        body: JSON.stringify(airScriptPayload),
+      });
+
+      const resBody = await res.json();
+      console.log("【调试】WPS AirScript API响应:", JSON.stringify(resBody));
+      
+      // 检查API是否返回错误
+      if (resBody.errno && resBody.errno !== 0) {
+        console.error("【调试】WPS AirScript API调用失败:", resBody.msg);
+        // 直接抛出错误，不使用模拟数据
+        throw new Error(`WPS AirScript API Error: ${resBody.msg} (${resBody.errno})`);
+      } else if (resBody.error && resBody.error !== "") {
+        console.error("【调试】WPS AirScript API调用失败:", resBody.error);
+        throw new Error(`WPS AirScript API Error: ${resBody.error}`);
+      } else if (resBody.status !== "finished") {
+        console.error("【调试】WPS AirScript API调用未完成:", resBody.status);
+        throw new Error(`WPS AirScript API Status: ${resBody.status}`);
       }
+      
+      // 解析WPS AirScript API返回的数据结构
+      let rawResult = resBody?.data?.result ?? null;
+      
+      // 处理不同的数据结构
+      if (rawResult && rawResult.records) {
+        // 新数据结构：{records: {records: [...]}}
+        if (rawResult.records.records) {
+          result = { data: [{ records: rawResult.records.records }] };
+        } else {
+          // 旧数据结构：{records: [...]}
+          result = { data: [{ records: rawResult.records }] };
+        }
+      } else {
+        // 其他数据结构
+        result = rawResult;
+      }
+      
+      // 解析 WPS 可能返回的字符串化 JSON
+      if (typeof result === "string") {
+        try { 
+          console.log("【调试】解析字符串化JSON:", result);
+          result = JSON.parse(result); 
+        } catch (e) {
+          console.error("解析 AirScript 结果失败", e);
+          throw new Error("解析 AirScript 结果失败: " + e.message);
+        }
+      }
+      
+      // 如果没有返回数据，抛出错误
+      if (!result) {
+        throw new Error("WPS AirScript API未返回数据");
+      }
+      
+      console.log("【调试】解析后的数据结构:", JSON.stringify(result));
+      
+      
+    } catch (error) {
+      console.error("【调试】WPS AirScript API调用出错:", error);
+      // 直接抛出错误，不使用模拟数据
+      throw error;
     }
+    
+    console.log("【调试】最终处理结果:", JSON.stringify(result));
 
     // === 4. 数据清洗 (解决“未知客户” Ghost Card 问题) ===
     // 如果是读取操作 (GET)，我们在返回给前端前，先帮它洗一遍数据
@@ -105,6 +163,44 @@ function filterGhostRecords(records) {
         return (f['客户姓名'] && String(f['客户姓名']).trim()) || 
                (f['姓名'] && String(f['姓名']).trim());
     });
+}
+
+// 辅助函数：提供模拟数据
+function getMockData(argv) {
+    const { method, b } = argv || {};
+    
+    // 根据b参数判断返回什么数据
+    if (method === 'read') {
+        if (b === 1) {
+            // 返回技师数据
+            return {
+                success: true,
+                data: [
+                    { records: [
+                        { id: '1', fields: { '姓名': '张三', '部门': '美容科' } },
+                        { id: '2', fields: { '姓名': '李四', '部门': '皮肤科' } },
+                        { id: '3', fields: { '姓名': '王五', '部门': '美容科' } },
+                        { id: '4', fields: { '姓名': '赵六', '部门': '皮肤科' } },
+                        { id: '5', fields: { '姓名': '孙七', '部门': '美容科' } }
+                    ] }
+                ]
+            };
+        } else {
+            // 返回预约数据
+            return {
+                success: true,
+                data: [
+                    { records: [
+                        { id: '1001', fields: { '客户姓名': '客户A', '预约时间': '14:00', '时长': '60', '技师&护士': '张三', '选择技师': ['1'], '服务项目': ['面部清洁'] } },
+                        { id: '1002', fields: { '客户姓名': '客户B', '预约时间': '15:30', '时长': '90', '技师&护士': '李四', '选择技师': ['2'], '服务项目': ['光子嫩肤'] } }
+                    ] }
+                ]
+            };
+        }
+    }
+    
+    // 默认返回空数据
+    return { success: true, data: [] };
 }
 
 function createJsonParams(data, status) {
