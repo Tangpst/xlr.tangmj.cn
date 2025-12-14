@@ -1,11 +1,16 @@
 // 文件路径: src/scheduler.js
 
-// 【修改点】：增加 parsedBody 参数
 export async function handleSchedulerRequest(request, parsedBody) {
-  const url = new URL(request.url);
-  const air_url = process.env.SCHEDULER_AIR_URL; 
+  // 1. 检查环境变量
+  const air_url = process.env.SCHEDULER_AIR_URL;
+  if (!air_url) {
+    console.error("严重错误: 缺少环境变量 SCHEDULER_AIR_URL");
+    return createJsonParams({ success: false, error: "Configuration Error" }, 500);
+  }
 
-  // === 1. CORS 预检 ===
+  const url = new URL(request.url);
+
+  // === CORS 预检 ===
   if (request.method === "OPTIONS") {
     return createJsonParams(null, 204);
   }
@@ -16,7 +21,6 @@ export async function handleSchedulerRequest(request, parsedBody) {
     // [GET] 读取模式
     if (request.method === "GET") {
       const searchParams = url.searchParams;
-      // 构造 AirScript 读取参数
       let argv = { 
         method: 'read', 
         date: searchParams.get('date'), 
@@ -24,24 +28,17 @@ export async function handleSchedulerRequest(request, parsedBody) {
       };
       airScriptPayload = { Context: { argv } };
     } 
-    
     // [POST] 写入模式
     else if (request.method === "POST") {
-      // 【修改点】：直接使用传入的 parsedBody，绝对不要再调用 request.json()
       const body = parsedBody || {}; 
-
-      let argv = { 
-        method: 'write', 
-        data: body 
-      };
+      let argv = { method: 'write', data: body };
       airScriptPayload = { Context: { argv } };
-    } 
-    
-    else {
+    } else {
       return createJsonParams({ error: "Method not allowed" }, 405);
     }
 
-    // === 3. 请求 WPS AirScript ===
+    // === 请求 WPS ===
+    // 注意：确保你的 FC 环境是 Node 18+ (原生支持 fetch)，否则需配置 node-fetch
     const res = await fetch(air_url, {
       method: "POST",
       headers: {
@@ -54,44 +51,53 @@ export async function handleSchedulerRequest(request, parsedBody) {
     const resBody = await res.json();
     let result = resBody?.data?.result ?? null;
     
-    // 解析 WPS 可能返回的字符串化 JSON
     if (typeof result === "string") {
       try { result = JSON.parse(result); } catch (e) {
         console.error("解析 AirScript 结果失败", e);
       }
     }
 
-    // === 4. 数据清洗 (解决“未知客户” Ghost Card 问题) ===
-    // 如果是读取操作 (GET)，我们在返回给前端前，先帮它洗一遍数据
+    // === 数据清洗 (关键修复) ===
     if (request.method === "GET" && result) {
-       // 处理 result 结构可能是 {data: [...]} 或 {success:true, data:[...]}
+       // 获取实际的数据容器
        let rawData = result.data || result; 
        
-       // 兼容 WPS 的 records 嵌套结构: {data: [{records: [...]}]}
+       // 情况 A: 嵌套结构 { records: [...] }
        if (Array.isArray(rawData) && rawData.length > 0 && rawData[0].records) {
-           rawData = rawData[0].records;
-           // 重新封装回去，保持结构一致
-           result.data[0].records = filterGhostRecords(rawData);
+           rawData[0].records = filterGhostRecords(rawData[0].records);
        } 
-       // 兼容普通数组结构
+       // 情况 B: 普通数组结构 [...] (最容易出错的地方)
        else if (Array.isArray(rawData)) {
-           result.data = filterGhostRecords(rawData);
+           // 修复：直接替换 rawData，不要给数组加 .data 属性
+           const filtered = filterGhostRecords(rawData);
+           if (result.data) {
+               result.data = filtered;
+           } else {
+               result = filtered; // 将 result 引用指向过滤后的新数组
+           }
        }
     }
 
-    // === 5. 格式化返回 ===
+    // === 格式化返回 ===
     let responseData;
-    if (result && typeof result === 'object' && result.success !== undefined) {
+    // 如果 result 是数组，说明它是数据本身，需要包装一下
+    if (Array.isArray(result)) {
+        responseData = { success: true, data: result, message: "请求成功" };
+    } 
+    // 如果 result 已经是标准对象接口
+    else if (result && typeof result === 'object' && result.success !== undefined) {
         responseData = result;
-    } else {
+    } 
+    // 兜底
+    else {
         responseData = { success: true, data: result, message: "请求成功" };
     }
     
     return createJsonParams(responseData, 200);
 
   } catch (err) {
-    console.error("Worker Error:", err);
-    return createJsonParams({ success: false, error: "Worker 内部错误: " + err.message }, 500);
+    console.error("FC Handler Error:", err);
+    return createJsonParams({ success: false, error: "Internal Error: " + err.message }, 500);
   }
 }
 
@@ -100,21 +106,26 @@ function filterGhostRecords(records) {
     if (!Array.isArray(records)) return records;
     return records.filter(item => {
         const f = item.fields || item;
-        // 只有当 '客户姓名' 或 '姓名' 存在且不为空时，才保留
-        // 这样可以彻底在服务器端干掉“未知客户”
         return (f['客户姓名'] && String(f['客户姓名']).trim()) || 
                (f['姓名'] && String(f['姓名']).trim());
     });
 }
 
+// 【关键修改】：适配 Node.js 环境的响应构造器
+// 不要使用 new Response()，而是返回 index.js 能识别的对象
 function createJsonParams(data, status) {
-  return new Response(data ? JSON.stringify(data) : null, {
+  const bodyStr = data ? JSON.stringify(data) : null;
+  
+  return {
     status: status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": '*',
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    },
-  });
+    // 使用 Map 以兼容 index.js 中的 .forEach 遍历
+    headers: new Map([
+        ['Content-Type', 'application/json; charset=utf-8'],
+        ['Access-Control-Allow-Origin', '*'],
+        ['Access-Control-Allow-Methods', 'GET, POST, OPTIONS'],
+        ['Access-Control-Allow-Headers', 'Content-Type, Authorization']
+    ]),
+    // 模拟 Response.text() 方法
+    text: async () => bodyStr
+  };
 }

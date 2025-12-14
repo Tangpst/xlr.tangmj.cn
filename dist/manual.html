@@ -200,29 +200,38 @@
 
             // 5. 循环读取明细 (从第4行/Index 3开始)
             let itemsHtml = '';
-            // 如果数据行数少于4行，说明没有明细
+            let hasPerformance = false; // [修改] 标记是否有绩效
+
             if (list.length > 3) {
                 for (let i = 3; i < list.length; i++) {
                     const row = list[i];
                     if (!row || !Array.isArray(row)) continue;
                     
-                    // 老逻辑：[0]=项目, [1]=次数, [3]=金额
                     const name = row[0];
                     if (!name || name === '总计') continue; // 跳过空行或总计行
 
-                    const count = row[1] || 0;
+                    const count = parseFloat(row[1]) || 0;
                     const subtotal = parseFloat(row[3]) || 0;
 
-                    itemsHtml += `
-                        <tr>
-                            <td>
-                                <div style="font-weight:500;">${name}</div>
-                                <div style="font-size:0.8rem; color:#666;">服务: ${count}次</div>
-                            </td>
-                            <td class="money">¥ ${subtotal.toFixed(2)}</td>
-                        </tr>
-                    `;
+                    // [修改] 筛选：只有服务次数 > 0 才显示
+                    if (count > 0) {
+                        hasPerformance = true;
+                        itemsHtml += `
+                            <tr>
+                                <td>
+                                    <div style="font-weight:500;">${name}</div>
+                                    <div style="font-size:0.8rem; color:#666;">服务: ${count}次</div>
+                                </td>
+                                <td class="money">¥ ${subtotal.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
                 }
+            }
+
+            // [修改] 如果所有项目都为0，显示提示文案
+            if (!hasPerformance) {
+                itemsHtml = '<tr><td colspan="2" style="text-align:center; padding:40px 0; color:#999; font-size:15px;">您暂无绩效</td></tr>';
             }
 
             // 6. 渲染 HTML
@@ -246,7 +255,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${itemsHtml || '<tr><td colspan="2" style="text-align:center; padding:20px 0; color:#999;">无明细记录</td></tr>'}
+                        ${itemsHtml}
                     </tbody>
                 </table>
 
