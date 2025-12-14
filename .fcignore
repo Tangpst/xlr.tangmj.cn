@@ -2,6 +2,7 @@ node_modules
 dist/assets
 dist/doc
 dist/public
+nodejs.zip
 *.jpg
 *.png
 *.ico
