@@ -1,6 +1,6 @@
 // 文件路径: src/scheduler.js
 
-export async function handleSchedulerRequest(request, parsedBody) {
+async function handleSchedulerRequest(request, parsedBody) {
   // 1. 检查环境变量
   const air_url = process.env.SCHEDULER_AIR_URL;
   if (!air_url) {
@@ -129,3 +129,5 @@ function createJsonParams(data, status) {
     text: async () => bodyStr
   };
 }
+
+module.exports = { handleSchedulerRequest };

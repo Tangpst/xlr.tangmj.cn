@@ -1,15 +1,13 @@
 // src/index.js (最终完美版)
-import express from 'express';
-import cookieParser from 'cookie-parser';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { handleWpsRequest } from './wps_routes.js';
-import { handleSchedulerRequest } from './scheduler.js';
-import { Auth, Jwt } from './auth.js';
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const path = require('path');
+const { handleWpsRequest } = require('./wps_routes.js');
+const { handleSchedulerRequest } = require('./scheduler.js');
+const { Auth, Jwt } = require('./auth.js');
 
-// ESM 兼容 __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// CommonJS 兼容 __dirname
+const __dirname = path.dirname(require.main.filename);
 
 const app = express();
 

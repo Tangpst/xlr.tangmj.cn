@@ -1,6 +1,6 @@
 // 文件路径: src/wps.js
 
-export const WPS = {
+const WPS = {
   // 1. 检查手机号是否存在 (原逻辑保持不变)
   async checkUserExists(phone, env) {
     try {
@@ -111,3 +111,5 @@ export const WPS = {
     }
   }
 };
+
+module.exports = { WPS };

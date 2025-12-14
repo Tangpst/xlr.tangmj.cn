@@ -1,4 +1,4 @@
-export async function handleWpsRequest(request, requestBody) {
+async function handleWpsRequest(request, requestBody) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const nameSearch = searchParams.get('name');
@@ -136,3 +136,5 @@ function createJsonParams(data, status) {
     },
   });
 }
+
+module.exports = { handleWpsRequest };

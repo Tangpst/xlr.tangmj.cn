@@ -1,10 +1,10 @@
 // src/auth.js (修复中文乱码版)
-import { WPS } from './wps.js'; 
+const { WPS } = require('./wps.js'); 
 
 // === 替代 KV 的内存存储 ===
 const MemoryKV = new Map();
 
-export const Auth = {
+const Auth = {
   async checkPhoneInWps(phone) {
     return await WPS.checkUserExists(phone); 
   },
@@ -67,7 +67,7 @@ export const Auth = {
   }
 };
 
-export const Jwt = {
+const Jwt = {
     async sign(payload, secret) {
         const header = { alg: 'HS256', typ: 'JWT' };
         const now = Math.floor(Date.now() / 1000);
@@ -179,4 +179,6 @@ function base64UrlDecodeToArrayBuffer(str) {
     bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes.buffer; // 返回 Buffer 供 TextDecoder 或 verify 使用
-}
+};
+
+module.exports = { Auth, Jwt };
