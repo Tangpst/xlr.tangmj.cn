@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档详情</title>
+    <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/font-awesome.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        /* 简单复用 Material Design 风格 */
+        :root { --md-primary: #6750A4; --bg: #FDF8FD; }
+        body { background: var(--bg); font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; color: #1C1B1F; }
+        
+        .paper {
+            max-width: 800px; margin: 0 auto; background: #fff; 
+            padding: 40px; border-radius: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            min-height: 60vh;
+        }
+
+        /* 顶部导航栏 */
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .back-link { text-decoration: none; color: #666; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .back-link:hover { color: var(--md-primary); }
+        
+        .btn-print {
+            background: var(--md-primary); color: #fff; border: none; 
+            padding: 8px 20px; border-radius: 20px; cursor: pointer; 
+            display: flex; align-items: center; gap: 8px; font-size: 0.9rem;
+        }
+        .btn-print:hover { opacity: 0.9; }
+
+        /* Markdown 内容样式 */
+        .content { line-height: 1.8; }
+        .content h1 { font-size: 1.8em; margin-bottom: 1rem; color: #000; text-align: center;}
+        .content h2 { font-size: 1.4em; margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 8px; color: var(--md-primary); }
+        .content p { margin-bottom: 1em; text-align: justify; }
+        .content table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .content th, .content td { border: 1px solid #ddd; padding: 12px; }
+        .content th { background-color: #f8f8f8; }
+
+        /* 打印专用样式 */
+        @media print {
+            body { background: white; padding: 0; }
+            .paper { box-shadow: none; padding: 0; width: 100%; max-width: 100%; border-radius: 0; }
+            .nav-bar { display: none; } /* 隐藏按钮 */
+            .content { font-size: 12pt; }
+        }
+        
+        .loading { text-align: center; margin-top: 50px; color: #999; }
+    </style>
+</head>
+<body>
+
+<div class="paper">
+    <div class="nav-bar">
+        <a href="/docs.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> 返回列表</a>
+        <button class="btn-print" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> 打印 / PDF
+        </button>
+    </div>
+
+    <div id="article-body" class="content">
+        <div class="loading"><i class="fas fa-spinner fa-spin"></i> 正在加载文档...</div>
+    </div>
+</div>
+
+<script>
+    async function loadArticle() {
+        const params = new URLSearchParams(window.location.search);
+        const targetId = params.get('id');
+        const container = document.getElementById('article-body');
+
+        if (!targetId) {
+            container.innerHTML = '<p style="text-align:center;color:red">错误：未指定文章ID</p>';
+            return;
+        }
+
+        try {
+            // 这里我们复用列表接口（假设后端v1返回所有数据）
+            // 如果你后端改了支持 ?id=xxx 筛选，这里会自动生效
+            const res = await fetch(`/api/v1?id=${targetId}`);
+            const json = await res.json();
+
+            let rowData = null;
+
+            // 逻辑：兼容后端返回单个对象 或者 返回全部数组
+            if (json.data && Array.isArray(json.data)) {
+                // 如果是数组，我们需要找到匹配 ID 的那一行
+                // 约定列索引: 0=ID, 1=标题, 2=类型, 3=Markdown内容
+                rowData = json.data.find(row => String(row[0]) === String(targetId));
+            } else if (json.data && json.data.id) {
+                // 如果后端直接返回了单条对象
+                rowData = [json.data.id, json.data.title, json.data.type, json.data.markdown_source];
+            }
+            
+            if (!rowData) throw new Error('未找到该文档');
+
+            // 提取数据
+            const title = rowData[1];
+            const markdownSource = rowData[3] || '> 暂无内容';
+
+            // 渲染
+            document.title = title; // 修改浏览器标签页标题
+            const htmlContent = marked.parse(markdownSource);
+            
+            container.innerHTML = `
+                <h1>${title}</h1>
+                <div class="md-render">${htmlContent}</div>
+            `;
+
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = `<p style="text-align:center;color:#999">加载失败：${err.message}</p>`;
+        }
+    }
+
+    loadArticle();
+</script>
+
+</body>
+</html>

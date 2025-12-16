@@ -2,6 +2,8 @@ async function handleWpsRequest(request, requestBody) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const nameSearch = searchParams.get('name');
+  // 【新增】获取 URL 中的 id 参数 (例如 /api/v1?id=1001)
+  const idSearch = searchParams.get('id');
   
   let air_url = "";
   let argv = {}; 
@@ -10,6 +12,13 @@ async function handleWpsRequest(request, requestBody) {
   // --- 1. 组装参数 ---
   if (url.pathname === "/api/v1") { 
     air_url = process.env.ARTICLE_AIR_URL;
+    
+    // 【新增】如果请求带了 id，这就传给 WPS 脚本
+    // 即使 WPS 脚本没写筛选逻辑，传过去通常也不会报错，前端拿到完整列表后再 find 也是一种兼容方案
+    if (idSearch) {
+        argv = { id: idSearch };
+    }
+    
     payload = { Context: { argv, sheet_name: "文档列表" } };
   }
   else if (url.pathname === "/api/v2") {

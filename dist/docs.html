@@ -3,447 +3,410 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星丽仁医疗诊所 - Document management system</title>
+    <title>文档中心 - 星丽仁医疗诊所</title>
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     <link rel="stylesheet" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/font-awesome.css">
     
     <style>
         :root {
-            /* MD3 Color Tokens */
             --md-sys-color-primary: #6750A4;
             --md-sys-color-on-primary: #FFFFFF;
             --md-sys-color-primary-container: #EADDFF;
             --md-sys-color-on-primary-container: #21005D;
-            
-            --md-sys-color-secondary-container: #E8DEF8;
-            --md-sys-color-on-secondary-container: #1D192B;
-
             --md-sys-color-surface: #FDF8FD;
-            --md-sys-color-surface-container: #F3EDF7;
             --md-sys-color-on-surface: #1C1B1F;
-            --md-sys-color-on-surface-variant: #49454F;
-            --md-sys-color-outline-variant: #CAC4D0;
-            
+            --md-sys-color-surface-variant: #E7E0EC;
             --radius-l: 24px;
             --radius-m: 16px;
-            --radius-s: 12px;
-            
-            --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
-            --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
         }
-        
-        * {
-            margin: 0; padding: 0; box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
+
+        * { box-sizing: border-box; }
+
         body {
             background-color: var(--md-sys-color-surface);
             color: var(--md-sys-color-on-surface);
             font-family: 'Roboto', 'Noto Sans SC', sans-serif;
-            line-height: 1.5;
-            padding-bottom: 60px;
-        }
-        
-        /* ----- Header ----- */
-        .header {
-            padding: 24px 0;
-            text-align: center;
-            margin-bottom: 10px; /* 减少间距，因为移除了统计卡片 */
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
         }
 
-        .header img {
-            width: 180px; 
-            height: auto;
-            max-width: 80%;
-        }
-
-        .container {
+        /* 顶部导航栏 */
+        .top-app-bar {
+            display: flex;
+            align-items: center;
+            padding: 10px 0 30px;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 24px;
-        }
-        
-        /* ----- Quick Access (Floating Style) ----- */
-        .floating-quick-access {
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            display: flex;
-            gap: 12px;
-            z-index: 100;
         }
 
-        .quick-access-btn {
-            background-color: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            padding: 0 20px;
-            height: 48px;
-            border-radius: var(--radius-l);
+        .back-btn {
+            text-decoration: none;
+            color: var(--md-sys-color-on-surface);
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
             gap: 10px;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-            box-shadow: var(--shadow-1);
-            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-            border: 1px solid transparent;
+            padding: 8px 16px;
+            border-radius: 50px;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background-color: rgba(0,0,0,0.05); }
+
+        h1 { margin: 0; font-size: 1.5rem; font-weight: 400; margin-left: 10px; }
+
+        /* 内容容器 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 40px;
         }
 
-        .quick-access-btn:hover {
-            box-shadow: var(--shadow-2);
-            transform: translateY(-1px);
-            background-color: #E2D6FA; 
-        }
-        
-        .quick-access-btn i { font-size: 1.1rem; }
-        
-        /* ----- Grid Layout ----- */
-        .section-header {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 24px;
-            color: var(--md-sys-color-on-surface);
-        }
-        .section-header h2 { font-size: 1.5rem; font-weight: 500; }
-        
-        .docs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-        }
-        
-        /* ----- Doc Card ----- */
+        /* 文档卡片样式 */
         .doc-item {
             background: #fff;
             border-radius: var(--radius-l);
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: var(--shadow-1);
-            transition: all 0.2s ease;
+            padding: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
-        
         .doc-item:hover {
-            box-shadow: var(--shadow-2);
             transform: translateY(-2px);
-        }
-        
-        /* Card Header */
-        .doc-card-header {
-            padding: 20px 20px 10px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+            border-color: var(--md-sys-color-surface-variant);
         }
 
-        .category-icon-box {
-            width: 40px; height: 40px;
-            border-radius: 12px;
-            background: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0; /* 防止图标被压缩 */
-        }
-        
-        .doc-category {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* List */
-        .doc-list {
-            list-style: none;
-            padding: 10px 0 20px 0;
-            flex-grow: 1;
-        }
-        
-        .doc-list li {
-            border-bottom: 1px solid var(--md-sys-color-surface-container);
-            margin: 0 10px;
-            border-radius: 8px;
-        }
-        .doc-list li:last-child { border-bottom: none; }
-        
-        .doc-link {
-            color: var(--md-sys-color-on-surface-variant);
-            text-decoration: none;
-            font-size: 0.95rem;
-            padding: 12px 16px;
+        /* 卡片头部 */
+        .doc-card-header {
+            padding: 20px 24px;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
             display: flex;
             align-items: center;
+            gap: 15px;
+        }
+        
+        .category-icon-box {
+            width: 40px; height: 40px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .doc-category { margin: 0; font-size: 1.25rem; font-weight: 500; }
+
+        /* 文档列表 */
+        .doc-list {
+            list-style: none;
+            padding: 10px 0;
+            margin: 0;
+        }
+
+        .doc-list li {
+            position: relative;
+        }
+        
+        /* 隐藏的列表项（用于展开/收起） */
+        .hidden-item { display: none; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .doc-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            text-decoration: none;
+            color: var(--md-sys-color-on-surface);
             transition: background 0.2s;
-            border-radius: 8px;
-            overflow: hidden; /* 确保溢出内容被隐藏 */
+            gap: 12px;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
         }
         
         .doc-link:hover {
-            background-color: var(--md-sys-color-surface-container);
+            background-color: rgba(103, 80, 164, 0.05);
+            border-left-color: var(--md-sys-color-primary);
             color: var(--md-sys-color-primary);
         }
-        
-        .doc-link i {
-            margin-right: 12px;
-            font-size: 1rem;
-            color: var(--md-sys-color-outline-variant); 
-            width: 20px; text-align: center;
-            flex-shrink: 0; /* 关键：图标不缩小 */
-        }
-        .doc-link:hover i { color: var(--md-sys-color-primary); }
 
-        /* --- 省略号处理样式 --- */
-        .doc-text {
-            white-space: nowrap;      /* 不换行 */
-            overflow: hidden;         /* 隐藏溢出内容 */
-            text-overflow: ellipsis;  /* 显示省略号 */
-            flex-grow: 1;             /* 占据剩余空间 */
-            min-width: 0;             /* Flex子项溢出修复 */
+        .doc-icon { color: #79747E; font-size: 1.1rem; min-width: 20px; text-align: center;}
+        .doc-link:hover .doc-icon { color: var(--md-sys-color-primary); }
+        
+        .doc-text { 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            flex: 1;
+        }
+
+        /* 外部链接标记图标 */
+        .ext-icon {
+            font-size: 0.75rem;
+            opacity: 0.4;
+            margin-left: auto; /* 推到最右边 */
+        }
+
+        /* 展开更多按钮 */
+        .load-more-container {
+            padding: 10px 24px 20px;
+            text-align: center;
         }
         
-        /* Load More Button */
-        .load-more-container { text-align: center; margin-top: 10px; padding-bottom: 10px; }
         .load-more-btn {
-            background: transparent;
-            border: 1px solid var(--md-sys-color-outline-variant);
-            color: var(--md-sys-color-primary);
-            padding: 8px 24px;
-            border-radius: var(--radius-l);
+            background: none;
+            border: 1px solid var(--md-sys-color-surface-variant);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #666;
             cursor: pointer;
             font-size: 0.85rem;
-            font-weight: 500;
             transition: all 0.2s;
-            display: inline-flex; align-items: center; gap: 6px;
-            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         .load-more-btn:hover {
-            background: var(--md-sys-color-surface-container);
-            border-color: var(--md-sys-color-primary);
+            background-color: var(--md-sys-color-surface-variant);
+            color: #000;
         }
 
-        .hidden-item { display: none; }
-        
-        /* States */
-        .loading {
-            padding: 40px; text-align: center; color: var(--md-sys-color-outline-variant);
-        }
-        .loading i { color: var(--md-sys-color-primary); font-size: 2rem; margin-bottom: 16px; display: block; }
-
-        .error {
-            background: #FCE8E6; color: #C5221F;
-            padding: 16px; border-radius: var(--radius-m);
-            margin: 20px 0;
-            display: flex; align-items: center; gap: 12px;
-        }
-
-        .footer {
+        .loading, .error {
             text-align: center;
-            margin-top: 40px;
-            color: var(--md-sys-color-outline-variant);
-            font-size: 0.85rem;
+            padding: 40px;
+            color: #666;
+            width: 100%;
+            grid-column: 1 / -1;
         }
-        
-        /* Mobile Optimization */
-        @media (max-width: 768px) {
-            .container { padding: 0 16px; }
-            .docs-grid { gap: 16px; }
-            
-            .floating-quick-access {
-                position: relative;
-                top: auto; right: auto;
-                width: 100%;
-                justify-content: center;
-                margin-bottom: 24px;
-                background: transparent;
-                box-shadow: none;
-                padding: 0;
-            }
-            .quick-access-btn { flex: 1; justify-content: center; max-width: 180px; }
-            
-            .header img { width: 150px; }
+        .error { color: #B3261E; }
+
+        @media (max-width: 600px) {
+            .content-grid { grid-template-columns: 1fr; }
+            .doc-item { margin-bottom: 10px; }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="container">
-            <h1><img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/logo.png" alt="星丽仁医疗美容诊所"></h1>
-        </div>
-    </div>
-    
-    <div class="container">
 
-        <div class="section-header">
-            <i class="fas fa-folder-open" style="color: var(--md-sys-color-primary); font-size: 1.5rem;"></i>
-            <h2>文档管理系统</h2>
+    <header class="top-app-bar">
+        <a href="index.html" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>返回首页</span>
+        </a>
+        <h1>文档中心</h1>
+    </header>
+
+    <div class="content-grid" id="docsContainer">
         </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const apiUrl = '/api/v1';
+        const docsContainer = document.getElementById('docsContainer');
         
-        <div class="docs-grid" id="docsContainer"></div>
-
-    </div>
-    
-    <div class="footer">
-        <p>星丽仁医疗美容诊所 &copy; 2025</p>
-        <p style="font-size: 0.75rem; opacity: 0.7; margin-top: 4px;">安全医疗，美丽永恒</p>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const apiUrl = '/api/v1';
-            const docsContainer = document.getElementById('docsContainer');
-            
-            const categoryTitles = ['预案', '制度', '表格', '表单','三证'];
-            const categoryIcons = {
-                '预案': 'fa-circle-info',
-                '制度': 'fa-stethoscope',
-                '表格': 'fa-table',
-                '表单': 'fa-clipboard-check',
-                '三证': 'fa-id-card'
-            };
-            
-            // Render Loading State
-            function renderCategories() {
-                docsContainer.innerHTML = '';
-                categoryTitles.forEach(title => {
-                    const iconClass = categoryIcons[title] || 'fa-folder';
-                    const docItem = document.createElement('div');
-                    docItem.className = 'doc-item';
-                    docItem.innerHTML = `
-                        <div class="doc-card-header">
-                            <div class="category-icon-box"><i class="fas ${iconClass}"></i></div>
-                            <h3 class="doc-category">${title}</h3>
-                        </div>
-                        <div class="loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <span style="font-size: 0.9rem">加载中...</span>
-                        </div>
-                    `;
-                    docsContainer.appendChild(docItem);
-                });
-            }
-            
-            renderCategories();
-            
-            // Fetch Data
-            fetch(apiUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error(`Status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    if (data && data.success && data.data) {
-                        const resultData = data.data;
-                        const categorizedData = { '预案': [], '制度': [], '表格': [], '表单': [], '三证': [] };
-                        
-                        resultData.forEach(doc => {
-                            const type = doc[2] || '预案';
-                            if (categorizedData.hasOwnProperty(type)) {
-                                categorizedData[type].push(doc);
-                            }
-                        });
-                        
-                        docsContainer.innerHTML = ''; // Clear loading
-                        
-                        // Render Content
-                        categoryTitles.forEach(title => {
-                            const docsInCategory = categorizedData[title] || [];
-                            const iconClass = categoryIcons[title] || 'fa-folder';
-                            
-                            const docItem = document.createElement('div');
-                            docItem.className = 'doc-item';
-                            
-                            // Header HTML
-                            const headerHtml = `
-                                <div class="doc-card-header">
-                                    <div class="category-icon-box"><i class="fas ${iconClass}"></i></div>
-                                    <h3 class="doc-category">${title}</h3>
-                                </div>
-                            `;
-                            
-                            const docList = document.createElement('ul');
-                            docList.className = 'doc-list';
-                            
-                            if (docsInCategory.length > 0) {
-                                const maxInitialItems = 5;
-                                const initialItems = docsInCategory.slice(0, maxInitialItems);
-                                const hiddenItems = docsInCategory.slice(maxInitialItems);
-                                
-                                const createItem = (doc, hidden = false) => {
-                                    const [docName, docPath] = doc;
-                                    const li = document.createElement('li');
-                                    if(hidden) li.className = 'hidden-item';
-                                    
-                                    // 根据文件名后缀判断图标
-                                    let fileIcon = 'fa-file-alt';
-                                    if(docName.includes('.pdf')) fileIcon = 'fa-file-pdf';
-                                    else if(docName.includes('.xls')) fileIcon = 'fa-file-excel';
-                                    else if(docName.includes('.doc')) fileIcon = 'fa-file-word';
-
-                                    // 使用 span 包裹 docName 并添加 title 属性
-                                    li.innerHTML = `
-                                        <a href="${docPath}" class="doc-link" title="${docName}">
-                                            <i class="fa-regular ${fileIcon}"></i>
-                                            <span class="doc-text">${docName}</span>
-                                        </a>`;
-                                    return li;
-                                };
-
-                                initialItems.forEach(doc => docList.appendChild(createItem(doc)));
-                                hiddenItems.forEach(doc => docList.appendChild(createItem(doc, true)));
-                                
-                                docItem.innerHTML = headerHtml;
-                                docItem.appendChild(docList);
-
-                                if (hiddenItems.length > 0) {
-                                    const loadMoreContainer = document.createElement('div');
-                                    loadMoreContainer.className = 'load-more-container';
-                                    
-                                    const loadMoreBtn = document.createElement('button');
-                                    loadMoreBtn.className = 'load-more-btn';
-                                    loadMoreBtn.innerHTML = `展开更多 (${hiddenItems.length}) <i class="fas fa-chevron-down"></i>`;
-                                    
-                                    loadMoreBtn.addEventListener('click', function() {
-                                        docList.querySelectorAll('.hidden-item').forEach(item => {
-                                            item.classList.remove('hidden-item');
-                                            item.style.animation = 'fadeIn 0.3s ease';
-                                        });
-                                        loadMoreContainer.remove();
-                                    });
-                                    
-                                    loadMoreContainer.appendChild(loadMoreBtn);
-                                    docItem.appendChild(loadMoreContainer);
-                                }
-                            } else {
-                                docItem.innerHTML = headerHtml;
-                                const emptyMsg = document.createElement('div');
-                                emptyMsg.className = 'loading'; 
-                                emptyMsg.style.padding = '20px';
-                                emptyMsg.innerHTML = '<span style="opacity:0.6; font-size:0.9rem">暂无文档</span>';
-                                docItem.appendChild(emptyMsg);
-                            }
-                            
-                            docsContainer.appendChild(docItem);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('API Error:', error);
+        // 1. 定义你要展示的分类块（顺序以此数组为准）
+        // 即使是外链，只要表格里类型填的是“制度”，就会显示在“制度”块里
+        const categoryTitles = ['预案', '制度', '表格', '表单', '三证', '其他'];
+        
+        const categoryIcons = {
+            '预案': 'fa-circle-info',
+            '制度': 'fa-stethoscope',
+            '表格': 'fa-table',
+            '表单': 'fa-clipboard-check',
+            '三证': 'fa-id-card',
+            '其他': 'fa-folder-open'
+        };
+        
+        // 渲染加载动画
+        function renderLoading() {
+            docsContainer.innerHTML = '';
+            categoryTitles.forEach(title => {
+                const iconClass = categoryIcons[title] || 'fa-folder';
+                const docItem = document.createElement('div');
+                docItem.className = 'doc-item';
+                docItem.innerHTML = `
+                    <div class="doc-card-header">
+                        <div class="category-icon-box"><i class="fas ${iconClass}"></i></div>
+                        <h3 class="doc-category">${title}</h3>
+                    </div>
+                    <div class="loading" style="padding:20px">
+                        <i class="fas fa-spinner fa-spin"></i> 加载中...
+                    </div>
+                `;
+                docsContainer.appendChild(docItem);
+            });
+        }
+        
+        renderLoading();
+        
+        // 获取数据
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success && data.data) {
+                    const resultData = data.data;
                     
-                    docsContainer.innerHTML = `
-                        <div style="grid-column: 1 / -1;" class="error">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <div>
-                                <strong>加载失败</strong>
-                                <div style="font-size: 0.9rem; opacity: 0.8">${error.message}</div>
+                    // === 【核心修改：定义列索引】 ===
+                    // 假设 WPS 表格列顺序如下：
+                    // A列(0): ID
+                    // B列(1): 标题
+                    // C列(2): 类型 (决定在哪个块显示)
+                    // D列(3): Markdown源码 (不用读，详情页才读)
+                    // E列(4): 跳转链接 (如果有值，则覆盖默认行为)
+                    const IDX_ID = 0;
+                    const IDX_TITLE = 1;
+                    const IDX_TYPE = 2;
+                    const IDX_LINK = 4; // E列
+                    
+                    // 初始化分类数据容器
+                    const categorizedData = {};
+                    categoryTitles.forEach(t => categorizedData[t] = []);
+                    
+                    // 遍历所有数据进行处理
+                    resultData.forEach(docRow => {
+                        // 读取类型，如果没有类型默认归为“其他”
+                        let type = docRow[IDX_TYPE];
+                        if (!type || !categoryTitles.includes(type)) {
+                            type = '其他'; 
+                        }
+                        
+                        // 读取外链（如果 E 列有值）
+                        const externalLink = docRow[IDX_LINK];
+                        
+                        // 构造每一条文档的数据对象
+                        const docObj = {
+                            id: docRow[IDX_ID],
+                            title: docRow[IDX_TITLE],
+                            // 核心逻辑：如果有外链，link就用外链；否则构造内部渲染页链接
+                            link: externalLink ? externalLink : `/article.html?id=${docRow[IDX_ID]}`,
+                            // 标记是否为外链
+                            isExternal: !!externalLink
+                        };
+
+                        // 放入对应分类
+                        if (categorizedData.hasOwnProperty(type)) {
+                            categorizedData[type].push(docObj);
+                        }
+                    });
+                    
+                    // 清空容器开始渲染
+                    docsContainer.innerHTML = '';
+                    
+                    // 遍历分类配置，渲染每个卡片
+                    categoryTitles.forEach(title => {
+                        const docsInCategory = categorizedData[title] || [];
+                        // 如果该分类没数据且不想显示空块，可以在这里加 if (docsInCategory.length === 0) return;
+                        
+                        const iconClass = categoryIcons[title] || 'fa-folder';
+                        
+                        const docItem = document.createElement('div');
+                        docItem.className = 'doc-item';
+                        
+                        // 卡片头部 HTML
+                        const headerHtml = `
+                            <div class="doc-card-header">
+                                <div class="category-icon-box"><i class="fas ${iconClass}"></i></div>
+                                <h3 class="doc-category">${title}</h3>
                             </div>
-                        </div>
-                    `;
-                });
-        });
-    </script>
+                        `;
+                        
+                        const docList = document.createElement('ul');
+                        docList.className = 'doc-list';
+                        
+                        if (docsInCategory.length > 0) {
+                            // 默认显示前 5 条，剩下的折叠
+                            const maxInitialItems = 5;
+                            const initialItems = docsInCategory.slice(0, maxInitialItems);
+                            const hiddenItems = docsInCategory.slice(maxInitialItems);
+                            
+                            // 创建单条记录的函数
+                            const createItem = (doc, hidden = false) => {
+                                const li = document.createElement('li');
+                                if(hidden) li.className = 'hidden-item';
+                                
+                                // 样式判断
+                                const targetAttr = doc.isExternal ? 'target="_blank"' : '';
+                                let icon = 'fa-file-lines'; // 默认文章图标
+                                let extIconHtml = '';
+
+                                if (doc.isExternal) {
+                                    // 根据后缀给个直观的图标
+                                    if (doc.link.endsWith('.pdf')) icon = 'fa-file-pdf';
+                                    else if (doc.link.endsWith('.xlsx') || doc.link.endsWith('.xls')) icon = 'fa-file-excel';
+                                    else if (doc.link.endsWith('.docx') || doc.link.endsWith('.doc')) icon = 'fa-file-word';
+                                    else icon = 'fa-fa-chain'; // 普通外链
+                                    
+                                    // 右侧显示一个小箭头图标提示是外链
+                                    extIconHtml = '<i class="fas fa-arrow-up-right-from-square ext-icon"></i>';
+                                }
+
+                                li.innerHTML = `
+                                    <a href="${doc.link}" class="doc-link" ${targetAttr} title="${doc.title}">
+                                        <i class="fa-regular ${icon} doc-icon"></i>
+                                        <span class="doc-text">${doc.title}</span>
+                                        ${extIconHtml}
+                                    </a>`;
+                                return li;
+                            };
+
+                            // 添加显示的条目
+                            initialItems.forEach(doc => docList.appendChild(createItem(doc)));
+                            // 添加隐藏的条目
+                            hiddenItems.forEach(doc => docList.appendChild(createItem(doc, true)));
+                            
+                            docItem.innerHTML = headerHtml;
+                            docItem.appendChild(docList);
+
+                            // 如果有隐藏条目，添加展开按钮
+                            if (hiddenItems.length > 0) {
+                                const loadMoreContainer = document.createElement('div');
+                                loadMoreContainer.className = 'load-more-container';
+                                const loadMoreBtn = document.createElement('button');
+                                loadMoreBtn.className = 'load-more-btn';
+                                loadMoreBtn.innerHTML = `展开更多 (${hiddenItems.length}) <i class="fas fa-chevron-down"></i>`;
+                                
+                                loadMoreBtn.addEventListener('click', function() {
+                                    // 展开逻辑
+                                    docList.querySelectorAll('.hidden-item').forEach(item => {
+                                        item.classList.remove('hidden-item');
+                                        item.style.animation = 'fadeIn 0.3s ease'; // 简单的淡入动画
+                                    });
+                                    loadMoreContainer.remove(); // 移除按钮
+                                });
+                                
+                                loadMoreContainer.appendChild(loadMoreBtn);
+                                docItem.appendChild(loadMoreContainer);
+                            }
+                        } else {
+                            // 空数据状态
+                            docItem.innerHTML = headerHtml + '<div class="loading" style="padding:20px"><span style="opacity:0.6;font-size:0.9rem">暂无文档</span></div>';
+                        }
+                        
+                        docsContainer.appendChild(docItem);
+                    });
+                } else {
+                    docsContainer.innerHTML = '<div class="error">数据加载异常</div>';
+                }
+            })
+            .catch(error => {
+                console.error('API Error:', error);
+                docsContainer.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+            });
+    });
+</script>
+
 </body>
 </html>
