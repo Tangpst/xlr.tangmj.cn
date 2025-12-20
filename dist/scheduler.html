@@ -276,7 +276,7 @@
                             service: serviceArr,
                             startTime: (f['预约时间'] || '').substring(0, 5),
                             endTime: (f['结束时间'] || '').substring(0, 5),
-                            duration: f['时长(分）'] || f['时长(分) '] || 0 
+                            duration: f['时长'] ||  0 
                         };
                     });
 
@@ -285,7 +285,8 @@
                     const uniqueNames = new Set(); 
                     onDutyRecords.forEach(item => {
                         const f = item.fields || {};
-                        if (f['姓名']) uniqueNames.add(f['姓名']);
+                        const name = f['姓名'];
+                        if (name && name !== '无指定') uniqueNames.add(name);
                     });
                     restingList.value = Array.from(uniqueNames);
 

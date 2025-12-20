@@ -34,6 +34,7 @@ resources:
         SERCH_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-2HSy7VhnRalXjDmBstGHJD/sync_task"
         MANUAL_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/297063958621/script/V2-4NWEWtVHZYz1p7S2eHNF8A/sync_task"
         SCHEDULER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6FUo4O1XWeSymGw4btc1HB/sync_task"
+        APP_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-5a8suMGUQYqUWEkvG8ETEQ/sync_task"
         AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
         JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
         SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 
