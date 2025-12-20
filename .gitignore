@@ -3,3 +3,6 @@
 s.yaml
 nodejs.zip
 node_modules
+dist/assets
+dist/doc
+dist/public
