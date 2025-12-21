@@ -2,368 +2,312 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星丽仁·医疗美容诊所 管理平台</title>
-    <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/font-awesome.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>工作台 - 星丽仁系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     
     <style>
+        /* === Material Design 3 风格变量 === */
         :root {
             --md-sys-color-primary: #6750A4;
             --md-sys-color-on-primary: #FFFFFF;
             --md-sys-color-primary-container: #EADDFF;
-            --md-sys-color-on-primary-container: #21005D;
-            
             --md-sys-color-surface: #FDF8FD;
-            --md-sys-color-surface-container: #F3EDF7;
+            --md-sys-color-surface-container: #F3EDF7; /* 卡片背景 */
             --md-sys-color-on-surface: #1C1B1F;
             --md-sys-color-on-surface-variant: #49454F;
-            --md-sys-color-outline-variant: #CAC4D0;
+            --md-sys-color-outline: #79747E;
             
-            --color-blue-bg: #E8F0FE; --color-blue-text: #1967D2;
-            --color-red-bg: #FCE8E6; --color-red-text: #C5221F;
-            --color-green-bg: #E6F4EA; --color-green-text: #137333;
-            --color-orange-bg: #FEF7E0; --color-orange-text: #EA8600;
-            --color-purple-bg: #F3E8FD; --color-purple-text: #9334E6;
-            --color-teal-bg: #E0F7FA; --color-teal-text: #007B83;
-            --color-gold-bg: #FFF8E1; --color-gold-text: #F9AB00;
+            --elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+            --elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+            
+            --border-radius-lg: 16px;
+            --border-radius-md: 12px;
+        }
 
-            --radius-l: 24px;
-            --radius-m: 16px;
-            --radius-s: 12px;
-            
-            --shadow-card: 0px 1px 3px 0px rgba(0, 0, 0, 0.12), 0px 1px 2px 0px rgba(0, 0, 0, 0.24);
-            --shadow-hover: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
-        }
-        
-        * {
-            margin: 0; padding: 0; box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background-color: var(--md-sys-color-surface);
             color: var(--md-sys-color-on-surface);
             min-height: 100vh;
-            padding: 24px 16px;
-            background-image: linear-gradient(to bottom, #FDF8FD 0%, #f4eff4 100%);
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 1000px; 
+            padding: 16px;
+            max-width: 800px; /* 限制最大宽度，大屏更好看 */
             margin: 0 auto;
-            transition: max-width 0.3s ease;
         }
-        
-        /* ----- Header 修改 ----- */
+
+        /* === 头部区域 === */
         .header {
-            margin-bottom: 24px;
-            padding: 0 8px;
             display: flex;
             align-items: center;
-            /* 关键修改：两端对齐，左侧 Logo，右侧欢迎语 */
-            justify-content: space-between; 
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding: 8px 4px;
         }
-        
-        @media (min-width: 768px) {
-            .header {
-                margin-bottom: 32px;
-            }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        
-        .header img {
-            height: 40px; 
+
+        .logo {
+            height: 48px;
             width: auto;
             object-fit: contain;
         }
 
-        /* 欢迎语样式 */
-        .welcome-msg {
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--md-sys-color-primary);
+            background-color: var(--md-sys-color-primary-container);
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* === 分类标题 === */
+        .section-title {
             font-size: 14px;
             font-weight: 500;
             color: var(--md-sys-color-on-surface-variant);
-            display: none; /* 默认隐藏，JS加载成功后显示 */
-        }
-
-        /* ----- Nav Section ----- */
-        .nav-section {
-            margin-bottom: 24px;
-            background: var(--md-sys-color-surface-container);
-            border-radius: var(--radius-l);
-            padding: 20px;
-        }
-
-        @media (min-width: 768px) {
-            .nav-section {
-                padding: 32px;
-                background: #FFFFFF;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-                border: 1px solid rgba(0,0,0,0.05);
-            }
-        }
-
-        .section-header {
+            margin: 24px 0 12px 4px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding-left: 4px;
+            gap: 8px;
+        }
+        
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background-color: var(--md-sys-color-outline);
+            opacity: 0.2;
         }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--md-sys-color-on-surface-variant);
-            letter-spacing: 0.1px;
-        }
-        
-        .section-icon {
-            color: var(--md-sys-color-primary);
-            font-size: 1.2rem;
-        }
-        
-        /* ----- Nav Grid ----- */
-        .nav-grid {
+        /* === 网格布局 === */
+        .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 20px;
-        }
-        
-        @media (max-width: 600px) {
-            .nav-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 12px;
-            }
+            grid-template-columns: repeat(4, 1fr); /* 默认4列 */
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
-        /* ----- Nav Item Card ----- */
-        .nav-item {
-            background: #ffffff;
-            border-radius: var(--radius-m);
+        /* 手机端适配：3列或4列取决于屏幕宽度 */
+        @media (max-width: 400px) {
+            .grid-container { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* === 应用卡片 === */
+        .app-card {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: var(--border-radius-md);
             padding: 16px 8px;
-            text-align: center;
-            box-shadow: var(--shadow-card);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             text-decoration: none;
-            height: 120px;
+            color: var(--md-sys-color-on-surface);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             border: 1px solid transparent;
         }
-        
-        .nav-item:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-hover);
-            border-color: rgba(103, 80, 164, 0.1);
-        }
 
-        .nav-item:active {
+        /* 点击/触摸反馈 */
+        .app-card:active {
             transform: scale(0.96);
-            box-shadow: none;
-            background: var(--md-sys-color-surface-container);
+            background-color: rgba(103, 80, 164, 0.12);
         }
         
-        .nav-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 18px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 14px;
-            font-size: 24px;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        .nav-item:hover .nav-icon {
-            transform: scale(1.15) rotate(5deg);
-        }
-        
-        .nav-text {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--md-sys-color-on-surface);
-            line-height: 1.3;
-            letter-spacing: 0.2px;
+        /* 桌面端 Hover 效果 */
+        @media (hover: hover) {
+            .app-card:hover {
+                box-shadow: var(--elevation-1);
+                background-color: #fff;
+                transform: translateY(-2px);
+            }
         }
 
-        /* ----- Color Variants ----- */
-        .color-blue { background: var(--color-blue-bg); color: var(--color-blue-text); }
-        .color-red { background: var(--color-red-bg); color: var(--color-red-text); }
-        .color-green { background: var(--color-green-bg); color: var(--color-green-text); }
-        .color-orange { background: var(--color-orange-bg); color: var(--color-orange-text); }
-        .color-purple { background: var(--color-purple-bg); color: var(--color-purple-text); }
-        .color-teal { background: var(--color-teal-bg); color: var(--color-teal-text); }
-        .color-gold { background: var(--color-gold-bg); color: var(--color-gold-text); } 
-        .color-yellow { background: var(--color-gold-bg); color: var(--color-gold-text); } 
+        .app-icon {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            /* 给图标加一点点投影，更有层次感 */
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
 
-        /* ----- Footer ----- */
-        .footer {
+        .app-name {
+            font-size: 13px;
+            line-height: 1.2;
             text-align: center;
-            margin-top: 40px;
-            padding-top: 24px;
-            color: var(--md-sys-color-outline-variant);
-            font-size: 0.8rem;
-            border-top: 1px dashed var(--md-sys-color-outline-variant);
-            margin-bottom: 20px;
+            font-weight: 500;
+            /* 限制两行文字，超出省略 */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--md-sys-color-on-surface-variant);
         }
 
-        @media (max-width: 400px) {
-            body { padding: 16px 12px; }
-            .nav-grid { gap: 10px; }
-            .nav-item { height: 105px; padding: 12px 4px; }
-            .nav-icon { width: 42px; height: 42px; font-size: 20px; margin-bottom: 8px; border-radius: 14px;}
-            .nav-text { font-size: 0.8rem; }
-            .section-title { font-size: 1rem; }
-            /* 移动端欢迎语稍微小一点 */
-            .welcome-msg { font-size: 12px; }
+        /* === 加载/空状态 === */
+        .state-box {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--md-sys-color-outline);
         }
+        .loading-spinner {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-bottom: 10px;
+            color: var(--md-sys-color-primary);
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/logo_black.png" alt="星丽仁·医疗美容诊所">
-            <div id="welcome-msg" class="welcome-msg">
-                欢迎你，<span id="user-name"></span>
-            </div>
-        </div>
-        
-        <div class="nav-section">
-            <div class="section-header">
-                <i class="fas fa-file-upload section-icon"></i>
-                <div class="section-title">数据提交</div>
-            </div>
-            
-            <div class="nav-grid">
-                <a href="https://f.wps.cn/g/cZ4gSgtF" class="nav-item">
-                    <div class="nav-icon color-blue"><i class="fas fa-box-open"></i></div>
-                    <div class="nav-text">出库提交</div>
-                </a>
-                
-                <a href="https://web.wps.cn/wo/sl/v324efVp?app_id=5FjYxbZI8LcwE78ipx1mGP" class="nav-item">
-                    <div class="nav-icon color-red"><i class="fas fa-warehouse"></i></div>
-                    <div class="nav-text">入库提交</div>
-                </a>
-                
-                <a href="https://web.wps.cn/wo/sl/v31eKlYG?app_id=37fkVvYWACnV9WracLmEFf" class="nav-item">
-                    <div class="nav-icon color-purple"><i class="fa-solid fa-user-nurse"></i></div>
-                    <div class="nav-text">手工提交</div>
-                </a>
 
-                <a href="https://www.kdocs.cn/wo/sl/v14H1joR" class="nav-item">
-                    <div class="nav-icon color-gold"><i class="fa-solid fa-file-medical"></i></div>
-                    <div class="nav-text">病例提交</div>
-                </a>
-
-                <a href="https://web.wps.cn/wo/sl/v34LYlhm?app_id=2R5wmiOSlFQHKdMMTBDsNs" class="nav-item">
-                    <div class="nav-icon color-green"><i class="fas fa-user-friends"></i></div>
-                    <div class="nav-text">客户信息</div>
-                </a>
-                
-                <a href="https://web.wps.cn/wo/sl/v31wRYUn?app_id=C8D5vNx5q5AVsREFJtpEF" class="nav-item">
-                    <div class="nav-icon color-orange"><i class="fas fa-pills"></i></div>
-                    <div class="nav-text">产品信息</div>
-                </a>
-                
-                <a href="https://f.kdocs.cn/g/sNqo3udL/" class="nav-item">
-                    <div class="nav-icon color-blue"><i class="fa-solid fa-award"></i></div>
-                    <div class="nav-text">业绩提交</div>
-                </a>
-
-                <a href="https://f.wps.cn/g/GP7XH8zg" class="nav-item">
-                    <div class="nav-icon color-yellow"><i class="fa-solid fa-chalkboard-user"></i></div>
-                    <div class="nav-text">培训记录</div>
-                </a>
-
-                  <a href="./daka.html" class="nav-item">
-                    <div class="nav-icon color-teal"><i class="fa-solid fa-calendar-check"></i></div>
-                    <div class="nav-text">预约提交</div>
-                </a>
-            </div>
-        </div>
-
-        <div class="nav-section">
-            <div class="section-header">
-                <i class="fas fa-search section-icon"></i>
-                <div class="section-title">信息查询</div>
-            </div>
-            
-            <div class="nav-grid">
-                <a href="./manual" class="nav-item">
-                    <div class="nav-icon color-purple"><i class="fas fa-search"></i></div>
-                    <div class="nav-text">手工查询</div>
-                </a>
-
-                 <a href="https://web.wps.cn/etapps/query/q/nYX2GDs2" class="nav-item">
-                    <div class="nav-icon color-yellow"><i class="fa-solid fa-clipboard-check"></i></div>
-                    <div class="nav-text">薪资确认单</div>
-                </a>
-                
-                <a href="https://web.wps.cn/wo/sl/v3b3WLZ?app_id=KbbFY9ws1yiHG2gfTn7Da" class="nav-item">
-                    <div class="nav-icon color-red"><i class="fas fa-clipboard-list"></i></div>
-                    <div class="nav-text">库存查询</div>
-                </a>
-                
-                  <a href="./scheduler" class="nav-item">
-                    <div class="nav-icon color-gold"><i class="fa-solid fa-calendar-days"></i></div>
-                    <div class="nav-text">排班查询</div>
-                </a>
-
-                <a href="https://web.wps.cn/wo/sl/v33G9gOV?app_id=17hOC0sbqYKK6vYrogtRPD" class="nav-item">
-                    <div class="nav-icon color-green"><i class="fa-solid fa-user"></i></div>
-                    <div class="nav-text">编号查询</div>
-                </a>
-
-                <a href="./docs.html" class="nav-item">
-                    <div class="nav-icon color-teal"><i class="fa-solid fa-folder-open"></i></div>
-                    <div class="nav-text">文档查询</div>
-                </a>
-
-                <a href="./training" class="nav-item">
-                    <div class="nav-icon color-blue"><i class="fa-solid fa-graduation-cap"></i></div>
-                    <div class="nav-text">培训查询</div>
-                </a>
-            <a href="./clinic.html" class="nav-item">
-                    <div class="nav-icon color-red"><i class="fa-solid fa-print"></i></div>
-                    <div class="nav-text">病例打印</div>
-                </a>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>© 2025 星丽仁·医疗美容诊所 管理系统</p>
-        </div>
+<header class="header">
+    <div class="brand-area">
+        <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/logo.png" alt="Logo" class="logo">
     </div>
+    <div class="user-info">
+        <div id="userName" class="user-name">加载中...</div>
+        <div id="userRole" class="user-role">...</div>
+    </div>
+</header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const res = await fetch('/api/user/info');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.isLoggedIn) {
-                        const nameEl = document.getElementById('user-name');
-                        const msgEl = document.getElementById('welcome-msg');
-                        
-                        // 优先显示姓名，没有则显示手机号
-                        nameEl.innerText = data.name || data.phone;
-                        
-                        // 显示欢迎语区域
-                        msgEl.style.display = 'block';
-                    }
-                }
-            } catch (e) {
-                console.error('获取用户信息失败', e);
+<main id="mainContent">
+    <div class="state-box">
+        <i class="ri-loader-4-line loading-spinner"></i>
+        <p>正在获取权限配置...</p>
+    </div>
+</main>
+
+<script>
+    // 1. 初始化用户信息
+    async function initUser() {
+        const localName = localStorage.getItem('user_name');
+        const localRole = localStorage.getItem('user_role');
+        
+        if (localName) {
+            updateUserUI(localName, localRole);
+        }
+
+        try {
+            const res = await fetch('/api/user/info');
+            if (res.ok) {
+                const data = await res.json();
+                updateUserUI(data.name, data.role);
+                localStorage.setItem('user_name', data.name);
+                localStorage.setItem('user_role', data.role);
+            } else if (res.status === 401) {
+                window.location.href = '/login.html';
             }
-        });
-    </script>
+        } catch(e) { console.warn('用户状态检查失败'); }
+    }
+
+    function updateUserUI(name, role) {
+        document.getElementById('userName').innerText = name || '未命名';
+        document.getElementById('userRole').innerText = role || '员工';
+    }
+
+    // 2. 加载并分组显示菜单
+    async function loadMenu() {
+        const main = document.getElementById('mainContent');
+        
+        try {
+            const res = await fetch('/api/app/menu');
+            if (!res.ok) throw new Error('网络请求失败');
+            
+            const apps = await res.json();
+
+            if (!apps || apps.length === 0) {
+                main.innerHTML = `
+                    <div class="state-box">
+                        <i class="ri-inbox-line" style="font-size:48px; margin-bottom:12px;"></i>
+                        <p>暂无可用应用，请联系管理员</p>
+                    </div>`;
+                return;
+            }
+
+            // === 核心逻辑：按类型分组 ===
+            // 使用 Map 保持插入顺序 (如果后端排序了，前端也能保持)
+            const grouped = new Map();
+
+            apps.forEach(app => {
+                const type = app.type || '其他应用';
+                if (!grouped.has(type)) {
+                    grouped.set(type, []);
+                }
+                grouped.get(type).push(app);
+            });
+
+            // 清空加载状态
+            main.innerHTML = '';
+
+            // 渲染分组
+            grouped.forEach((groupApps, typeName) => {
+                // 1. 创建标题
+                const title = document.createElement('h3');
+                title.className = 'section-title';
+                title.innerText = typeName;
+                main.appendChild(title);
+
+                // 2. 创建 Grid 容器
+                const grid = document.createElement('div');
+                grid.className = 'grid-container';
+
+                // 3. 填充卡片
+                groupApps.forEach(app => {
+                    const card = document.createElement('a');
+                    card.className = 'app-card';
+                    card.href = app.url;
+                    
+                    // 图片错误兜底
+                    const imgUrl = app.icon || 'https://via.placeholder.com/80?text=Icon';
+                    
+                    card.innerHTML = `
+                        <img src="${imgUrl}" class="app-icon" alt="${app.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/80?text=Err'">
+                        <span class="app-name">${app.name}</span>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                main.appendChild(grid);
+            });
+
+        } catch (e) {
+            console.error(e);
+            main.innerHTML = `
+                <div class="state-box">
+                    <i class="ri-wifi-off-line" style="font-size:48px; color:var(--md-sys-color-error);"></i>
+                    <p style="margin-top:12px">加载失败，请刷新重试</p>
+                </div>`;
+        }
+    }
+
+    // 启动
+    initUser();
+    loadMenu();
+</script>
+
 </body>
 </html>
