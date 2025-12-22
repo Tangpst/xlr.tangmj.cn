@@ -86,6 +86,11 @@
         <input type="number" v-model="form.duration" class="md-input" placeholder="60">
     </div>
 
+    <div class="input-group">
+        <label>备注</label>
+        <input type="text" v-model="form.notes" class="md-input" placeholder="如有特殊需求请填写">
+    </div>
+
     <div class="submit-area">
         <button class="btn-submit" @click="handleSubmit" :disabled="submitting || !isValid">
             <i v-if="submitting" class="ri-loader-4-line ri-spin"></i>
@@ -110,7 +115,7 @@
             const submitting = ref(false);
             const errorMsg = ref('');
             
-            // [新增 1] 存储当前登录用户的手机号
+            // 存储当前登录用户的手机号
             const currentUserPhone = ref('');
 
             const getToday = () => {
@@ -124,12 +129,13 @@
                 services: [],      
                 duration: 60,
                 date: getToday(),
-                startTime: '10:00'
+                startTime: '10:00',
+                notes: '' // 【新增】初始化备注
             });
 
             const formatDateParam = (dateStr) => dateStr ? dateStr.replace(/-/g, '/') : '';
 
-            // [新增 2] 获取当前用户信息
+            // 获取当前用户信息
             const fetchUserInfo = async () => {
                 try {
                     const res = await fetch('/api/user/info');
@@ -142,7 +148,6 @@
                     }
                 } catch (e) {
                     console.error("获取用户信息失败", e);
-                    // 不阻断流程，只是没法记录提交人
                 }
             };
 
@@ -287,7 +292,7 @@
 
                     const departmentsArray = form.selectedTechs.map(t => t.department);
 
-                    // 2. 构造提交数据
+                    // 构造提交数据
                     const payload = {
                         date: formatDateParam(form.date),
                         client: form.client,
@@ -296,8 +301,8 @@
                         services: form.services,
                         startTime: form.startTime,
                         duration: Number(form.duration),
-                        // [新增 3] 增加提交人字段
-                        submitter: currentUserPhone.value 
+                        submitter: currentUserPhone.value,
+                        notes: form.notes // 【新增】提交备注
                     };
 
                     console.log("【调试】提交 Payload:", JSON.stringify(payload, null, 2));
@@ -325,6 +330,7 @@
                     form.client = '';
                     form.selectedTechs = [];
                     form.services = [];
+                    form.notes = ''; // 清空备注
                     fetchDailyData(); 
 
                 } catch (e) {
@@ -340,7 +346,6 @@
             });
 
             onMounted(() => {
-                // 页面挂载时，并行执行：1.获取数据 2.获取当前用户信息
                 fetchDailyData();
                 fetchUserInfo();
             });
