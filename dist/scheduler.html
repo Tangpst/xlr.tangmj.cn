@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>当日预约表</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="./js/auth.js"></script>
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/remixicon.css" rel="stylesheet">
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     
@@ -67,11 +68,11 @@
         .tech-info { display: flex; align-items: center; gap: 8px; }
         .tech-avatar { width: 32px; height: 32px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; }
         .tech-name { font-size: 0.95rem; font-weight: 500; }
-        /* 修改：部门标签容器 */
         .dept-wrapper { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
         .dept-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: var(--radius-full); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .dept-medical { background: var(--dept-medical-bg); color: var(--dept-medical-text); }
         .dept-life { background: var(--dept-life-bg); color: var(--dept-life-text); }
+        .remark-text { font-size: 0.85rem; color: #666; background: #f9f9f9; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
         .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: var(--radius-l); border: 1px dashed var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface-variant); }
         @media (max-width: 768px) {
             body { padding: 16px 12px; }
@@ -84,7 +85,6 @@
             .time-duration { margin-top: 0; }
             .section-main { gap: 12px; }
             .section-right { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px; }
-            /* 移动端部门标签靠右显示 */
             .dept-wrapper { justify-content: flex-end; }
         }
     </style>
@@ -112,7 +112,7 @@
         </div>
     </div>
 
-    <div class="filter-tabs">
+    <div class="filter-tabs" v-if="authUser.role !== '美容师'">
         <button class="filter-chip" :class="{ active: currentTab === '全部' }" @click="currentTab = '全部'">
             <i class="ri-check-line"></i> 全部
         </button>
@@ -147,7 +147,7 @@
             <div class="section-main">
                 <div class="client-info">
                     <i class="ri-user-smile-fill client-icon"></i>
-                    <span>{{ item.client }}</span>
+                    <span>{{ item.displayClient }}</span>
                 </div>
                 <div class="project-list">
                     <span v-if="item.service.length === 0" class="tag tag-default">无项目</span>
@@ -158,6 +158,10 @@
                         :class="getTagClass(serviceName)">
                         {{ serviceName }}
                     </span>
+                </div>
+                <div v-if="item.remark" class="remark-text">
+                    <i class="ri-sticky-note-line" style="vertical-align: middle; margin-right: 2px;"></i> 
+                    {{ item.remark }}
                 </div>
             </div>
 
@@ -184,6 +188,9 @@
 
     createApp({
         setup() {
+            // 【集成】引入 auth.js 的功能
+            const { authUser, fetchUser, isShareholder, isMe } = window.useAuth();
+
             const getTodayDate = () => {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -194,11 +201,9 @@
 
             const searchDate = ref(getTodayDate());
             const currentTab = ref('全部');
-            
             const rawData = ref([]);
             const restingList = ref([]);
             const loading = ref(false);
-
             const API_URL = './api/scheduler';
 
             const extractWpsData = (json) => {
@@ -220,14 +225,11 @@
                 return val || '';
             };
 
-            // 【新增】解析部门列表，始终返回数组
             const parseDepartments = (val) => {
-                if (!val) return ['未分类']; // 默认值
+                if (!val) return ['未分类'];
                 if (Array.isArray(val)) {
-                    // 处理对象数组 [{name:'A'}, {name:'B'}] 或 字符串数组 ['A', 'B']
                     return val.map(v => (typeof v === 'object' ? v.name : v));
                 }
-                // 处理单个字符串
                 return [val];
             };
 
@@ -246,7 +248,6 @@
                     const scheduleJson = await scheduleRes.json();
                     const onDutyJson = await onDutyRes.json();
 
-                    // === 处理预约列表 ===
                     const scheduleRecords = extractWpsData(scheduleJson);
                     
                     const validSchedule = scheduleRecords.filter(item => {
@@ -254,7 +255,8 @@
                         return f['客户姓名'] && String(f['客户姓名']).trim() !== '';
                     });
 
-                    rawData.value = validSchedule.map(item => {
+                    // --- 处理预约列表数据 ---
+                    let processedData = validSchedule.map(item => {
                         const f = item.fields || {};
 
                         let serviceArr = [];
@@ -264,29 +266,54 @@
                             serviceArr = [f['项目']];
                         }
 
-                        // 【修改点】使用 parseDepartments 解析部门数组
                         const deptArr = parseDepartments(f['部门']);
 
+                        // === 隐私逻辑 (股东特例) ===
+                        const realName = f['客户姓名'];
+                        const submitterPhone = f['提交电话'] || f['submitter'] || ''; 
+                        
+                        let displayClient = realName;
+
+                        // 逻辑：如果是股东，且这条记录不是自己提交的，则屏蔽姓名
+                        if (isShareholder.value && !isMe(submitterPhone)) {
+                            displayClient = '***';
+                        }
+                        
                         return {
                             id: item.id,
                             date: f['日期'] || searchDate.value,
-                            client: f['客户姓名'], 
+                            client: realName, 
+                            displayClient: displayClient, // 使用计算后的显示名
                             tech: parseDisplayValue(f['技师&护士']) || '待定', 
-                            depts: deptArr, // 这里存的是数组 ['医疗美容', '生活美容']
+                            depts: deptArr,
                             service: serviceArr,
                             startTime: (f['预约时间'] || '').substring(0, 5),
                             endTime: (f['结束时间'] || '').substring(0, 5),
-                            duration: f['时长'] ||  0 
+                            duration: f['时长'] ||  0,
+                            remark: f['备注'] || ''
                         };
                     });
 
-                    // === 处理在岗人员 ===
+                    // 角色过滤逻辑 (美容师只看生活美容)
+                    if (authUser.role === '美容师') {
+                        processedData = processedData.filter(item => 
+                            item.depts && item.depts.includes('生活美容')
+                        );
+                        currentTab.value = '生活美容'; 
+                    }
+
+                    rawData.value = processedData;
+
+                    // --- 处理今日在岗人员 (顶部横幅) ---
                     const onDutyRecords = extractWpsData(onDutyJson);
                     const uniqueNames = new Set(); 
                     onDutyRecords.forEach(item => {
                         const f = item.fields || {};
                         const name = f['姓名'];
-                        if (name && name !== '无指定') uniqueNames.add(name);
+                        // 屏蔽名单中的“生美”和“医美”
+                        if (name && name !== '无指定' && name !== '生美' && name !== '医美') {
+                            uniqueNames.add(name);
+                        }
                     });
                     restingList.value = Array.from(uniqueNames);
 
@@ -297,14 +324,12 @@
                 }
             };
 
-            // 【修改点】过滤逻辑更新
             const filteredSchedule = computed(() => {
                 if (rawData.value.length === 0) return [];
 
                 return rawData.value.filter(item => {
-                    // 如果选了“全部”，显示所有
+                    // 美容师已在 loadScheduleData 中过滤，这里仅响应手动 tab 切换
                     if (currentTab.value === '全部') return true;
-                    // 如果选了具体部门，只要该记录的部门数组里 包含 该部门即可
                     return item.depts && item.depts.includes(currentTab.value);
                 }).sort((a, b) => a.startTime.localeCompare(b.startTime));
             });
@@ -315,13 +340,15 @@
                 return 'tag-default'; 
             };
 
-            onMounted(() => {
+            onMounted(async () => {
+                await fetchUser(); // 先获取用户角色
                 loadScheduleData();
             });
 
             return {
                 searchDate,
                 currentTab,
+                authUser, // 暴露给模板 (用于 v-if="authUser.role !== ...")
                 filteredSchedule,
                 restingList,
                 loading,

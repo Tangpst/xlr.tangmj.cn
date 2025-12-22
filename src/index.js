@@ -1,4 +1,4 @@
-// src/index.js (修复版)
+// src/index.js (修复版 + 新增 ManualData)
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -6,6 +6,7 @@ const { handleWpsRequest } = require('./wps_routes.js');
 const { handleSchedulerRequest } = require('./scheduler.js');
 const { Auth, Jwt } = require('./auth.js');
 const { WPS } = require('./wps.js'); // 确保引入 WPS
+const { fetchManualData } = require('./manual_data.js'); // 【新增】引入手工数据服务
 
 const app = express();
 
@@ -122,6 +123,29 @@ app.get('/api/app/menu', async (req, res) => {
         });
         res.json(result);
     } catch (e) { res.status(500).json({ error: '获取菜单失败' }); }
+});
+
+// 【新增】美容师手工数据接口
+app.get('/api/manual/data', async (req, res) => {
+    try {
+        // 1. 鉴权
+        const token = req.cookies.auth_token;
+        if (!token) return res.status(401).json({ error: '未登录' });
+        
+        const user = await Jwt.verify(token, process.env.JWT_SECRET);
+        if (!user || !user.phone) return res.status(401).json({ error: 'Token 无效' });
+
+        // 2. 调用新服务获取数据
+        // 直接使用当前登录用户的手机号去查询
+        const data = await fetchManualData(user.phone);
+        
+        // 3. 返回结果
+        res.json({ success: true, data: data });
+
+    } catch (e) {
+        console.error("❌ 获取手工数据失败:", e);
+        res.status(500).json({ error: '获取数据失败' });
+    }
 });
 
 // 业务 API

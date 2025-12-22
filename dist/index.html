@@ -18,6 +18,7 @@
             --md-sys-color-on-surface: #1C1B1F;
             --md-sys-color-on-surface-variant: #49454F;
             --md-sys-color-outline: #79747E;
+            --md-sys-color-error: #B3261E; /* 错误/退出色 */
             
             --elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
             --elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
@@ -59,6 +60,13 @@
             object-fit: contain;
         }
 
+        /* 用户信息区域容器 */
+        .user-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px; /* 头像信息和退出按钮的间距 */
+        }
+
         .user-info {
             text-align: right;
         }
@@ -78,6 +86,35 @@
             display: inline-block;
             margin-top: 4px;
             font-weight: 500;
+        }
+
+        /* === 退出按钮样式 === */
+        .logout-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%; /* 圆形按钮 */
+            color: var(--md-sys-color-outline);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-btn i {
+            font-size: 24px;
+        }
+
+        .logout-btn:active {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        @media (hover: hover) {
+            .logout-btn:hover {
+                background-color: #FFF8F7; /* 极淡的红色背景 */
+                color: var(--md-sys-color-error); /* 变红 */
+            }
         }
 
         /* === 分类标题 === */
@@ -188,9 +225,15 @@
     <div class="brand-area">
         <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/logo.png" alt="Logo" class="logo">
     </div>
-    <div class="user-info">
-        <div id="userName" class="user-name">加载中...</div>
-        <div id="userRole" class="user-role">...</div>
+    
+    <div class="user-wrapper">
+        <div class="user-info">
+            <div id="userName" class="user-name">加载中...</div>
+            <div id="userRole" class="user-role">...</div>
+        </div>
+        <button onclick="handleLogout()" class="logout-btn" title="退出登录">
+            <i class="ri-logout-box-r-line"></i>
+        </button>
     </div>
 </header>
 
@@ -302,6 +345,21 @@
                     <p style="margin-top:12px">加载失败，请刷新重试</p>
                 </div>`;
         }
+    }
+
+    // 3. 退出登录逻辑
+    function handleLogout() {
+        if (!confirm('确定要退出当前账号吗？')) return;
+
+        // 清除前端缓存
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('user_role');
+
+        // 尝试清除 Cookie (如果不是 HttpOnly)
+        document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+        // 跳转登录页
+        window.location.href = '/login.html';
     }
 
     // 启动

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>手工费查询 - 星丽仁系统</title>
+    <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/font-awesome.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        /* === MD3 风格样式 (由紫色改为粉色) === */
+        :root { 
+            /* Pink 主题色 */
+            --md-sys-color-primary: #D81B60; 
+            --md-sys-color-on-primary: #FFFFFF; 
+            --md-sys-color-primary-container: #FFD9E2; 
+            --md-sys-color-on-primary-container: #3B0018; 
+            
+            /* 背景色微调为暖色调 */
+            --md-sys-color-surface: #FFF8F9; 
+            --md-sys-color-surface-variant: #F2DDE1; 
+            --md-sys-color-on-surface: #201A1B; 
+            --md-sys-color-on-surface-variant: #514347; 
+            
+            --md-sys-color-error: #B3261E; 
+            --radius-m: 16px; 
+            --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', 'Noto Sans SC', sans-serif; background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); min-height: 100vh; padding: 20px 16px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; }
+        
+        .header { margin-bottom: 24px; text-align: left; }
+        .header h1 { font-size: 24px; font-weight: 400; margin-bottom: 4px; color: var(--md-sys-color-on-surface); }
+        .header p { font-size: 14px; color: var(--md-sys-color-on-surface-variant); }
+        
+        .user-badge { display: inline-flex; align-items: center; background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 4px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; margin-top: 8px; }
+        .user-badge i { margin-right: 6px; }
+        
+        .loading-state { text-align: center; padding: 60px 20px; color: var(--md-sys-color-on-surface-variant); display: none; }
+        .loading-state.active { display: block; }
+        .spinner { font-size: 32px; color: var(--md-sys-color-primary); animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .error-state { text-align: center; padding: 40px 20px; color: var(--md-sys-color-error); display: none; background: #FFF8F7; border-radius: var(--radius-m); border: 1px solid #F4B8B5; }
+        .error-state.active { display: block; }
+        
+        .receipt-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-1); position: relative; background-image: radial-gradient(circle at 0 100%, transparent 8px, #fff 9px), radial-gradient(circle at 100% 100%, transparent 8px, #fff 9px); background-position: bottom left, bottom right; background-size: 50% 100%; background-repeat: no-repeat; padding-bottom: 12px; display: none; animation: slideUp 0.4s ease; }
+        .receipt-card.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .receipt-header { background: var(--md-sys-color-primary); color: white; padding: 24px; text-align: center; }
+        .receipt-header h2 { font-size: 1.2rem; font-weight: 500; margin: 0; }
+        .receipt-header .sub { font-size: 0.8rem; opacity: 0.9; margin-top: 4px; }
+        
+        .receipt-body { padding: 24px; }
+        
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; }
+        .info-label { color: var(--md-sys-color-on-surface-variant); }
+        .info-val { color: var(--md-sys-color-on-surface); font-weight: 500; text-align: right; }
+        
+        .divider-dashed { border-top: 2px dashed #E0E0E0; margin: 16px 0; }
+        
+        .item-list { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .item-list th { text-align: left; color: var(--md-sys-color-on-surface-variant); font-size: 0.8rem; padding-bottom: 8px; font-weight: 500; }
+        .item-list td { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; color: var(--md-sys-color-on-surface); vertical-align: top; }
+        .item-list tr:last-child td { border-bottom: none; }
+        .item-list .money { text-align: right; font-family: monospace; font-weight: 600; color: var(--md-sys-color-primary); }
+        .item-list .item-meta { font-size: 0.75rem; color: #888; margin-top: 2px; }
+        
+        .total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--md-sys-color-on-surface-variant); }
+        .total-label { font-weight: 700; font-size: 1rem; }
+        .total-amount { font-size: 1.5rem; font-weight: 700; color: var(--md-sys-color-primary); }
+        
+        .refresh-btn { margin-top: 20px; width: 100%; padding: 12px; background: transparent; border: 1px solid var(--md-sys-color-on-surface-variant); border-radius: 24px; color: var(--md-sys-color-on-surface-variant); font-size: 14px; cursor: pointer; display: none; transition: all 0.2s; }
+        .refresh-btn:active { background: rgba(0,0,0,0.05); }
+        .receipt-card.active + .refresh-btn { display: block; }
+        
+        .debug-info { margin-top: 20px; font-size: 12px; color: #999; word-break: break-all; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>手工费查询</h1>
+        <p>Manual Service Fee Record</p>
+        <div id="userBadge" class="user-badge" style="display:none;">
+            <i class="ri-user-heart-line"></i> <span id="displayUserName">...</span>
+        </div>
+    </div>
+
+    <div id="loading" class="loading-state active">
+        <i class="ri-loader-4-line spinner"></i>
+        <p>正在拉取最新手工费数据...</p>
+    </div>
+
+    <div id="error" class="error-state">
+        <i class="ri-error-warning-line" style="font-size: 32px; margin-bottom: 10px;"></i>
+        <p id="errorText">加载失败</p>
+        <button onclick="location.reload()" style="margin-top:15px; padding:8px 20px; border:none; background:var(--md-sys-color-primary); color:white; border-radius:4px;">重试</button>
+        <div id="debugBox" class="debug-info"></div>
+    </div>
+
+    <div id="receipt" class="receipt-card">
+        <div class="receipt-header">
+            <h2>星丽仁 · 美容师手工费</h2>
+            <div class="sub">Technician Service Receipt</div>
+        </div>
+        <div class="receipt-body" id="receiptContent"></div>
+    </div>
+    
+    <button class="refresh-btn" onclick="location.reload()">
+        <i class="ri-refresh-line"></i> 刷新数据
+    </button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const errorTextEl = document.getElementById('errorText');
+        const receiptEl = document.getElementById('receipt');
+        const receiptContentEl = document.getElementById('receiptContent');
+        const userBadgeEl = document.getElementById('userBadge');
+        const displayUserNameEl = document.getElementById('displayUserName');
+        const debugBox = document.getElementById('debugBox');
+
+        // === 工具函数 ===
+        const showError = (msg, debugData) => {
+            loadingEl.classList.remove('active');
+            receiptEl.classList.remove('active');
+            errorEl.classList.add('active');
+            errorTextEl.innerText = msg;
+            if (debugData) {
+                debugBox.style.display = 'block';
+                debugBox.innerText = "Debug: " + JSON.stringify(debugData).substring(0, 300);
+            }
+        };
+
+        const showData = (html) => {
+            loadingEl.classList.remove('active');
+            errorEl.classList.remove('active');
+            receiptContentEl.innerHTML = html;
+            receiptEl.classList.add('active');
+        };
+
+        // 格式化日期：2025/11/15 -> 2025年11月
+        const formatMonth = (dateStr) => {
+            if (!dateStr) return '未知月份';
+            try {
+                // 简单的字符串处理，适应 "YYYY/MM/DD" 格式
+                const parts = String(dateStr).split('/');
+                if (parts.length >= 2) {
+                    return `${parts[0]}年${parts[1]}月`;
+                }
+                // 尝试 Date 解析兜底
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+                }
+            } catch(e) {}
+            return dateStr;
+        };
+
+        try {
+            // 1. 登录检查
+            const userRes = await fetch('/api/user/info');
+            if (userRes.status === 401) { window.location.href = '/login.html'; return; }
+            const userData = await userRes.json();
+            if (!userData.isLoggedIn || !userData.phone) { window.location.href = '/login.html'; return; }
+
+            displayUserNameEl.innerText = userData.name || userData.phone;
+            userBadgeEl.style.display = 'inline-flex';
+
+            // 2. 发起查询 (调用新接口)
+            const dataRes = await fetch('/api/manual/data');
+            const resJson = await dataRes.json();
+
+            // 检查 success 和 data
+            if (resJson.success && Array.isArray(resJson.data)) {
+                renderManualData(resJson.data, userData.name);
+            } else {
+                showError("未查询到数据或服务异常", resJson);
+            }
+
+        } catch (e) {
+            console.error(e);
+            showError("网络连接错误，请稍后重试");
+        }
+
+        // === 渲染核心逻辑 ===
+        function renderManualData(records, userName) {
+            if (records.length === 0) {
+                receiptContentEl.innerHTML = `
+                    <div style="text-align:center; padding:30px 0; color:#999;">
+                        <i class="ri-inbox-line" style="font-size:48px; display:block; margin-bottom:10px;"></i>
+                        暂无上月手工费记录
+                    </div>
+                `;
+                showData(receiptContentEl.innerHTML);
+                return;
+            }
+
+            // 3. 提取汇总信息
+            // 假设所有记录的月份相同，取第一条
+            const firstFields = records[0].fields || records[0];
+            const monthStr = formatMonth(firstFields['月份']);
+            const techName = firstFields['技师'] || userName || '未知';
+            
+            let totalAmount = 0;
+            let itemsHtml = '';
+
+            // 4. 遍历记录生成列表
+            records.forEach(item => {
+                const f = item.fields || item;
+                const projectName = f['项目'] || '未命名项目';
+                const count = parseInt(f['次数']) || 0;
+                const subTotal = parseFloat(f['手工费小计']) || 0;
+                
+                // 提取单价（如果 array 格式则取第一个，否则直接用）
+                let unitPrice = 0;
+                if (Array.isArray(f['手工费']) && f['手工费'].length > 0) {
+                    unitPrice = f['手工费'][0];
+                } else {
+                    unitPrice = parseFloat(f['手工费']) || 0;
+                }
+
+                if (count > 0) {
+                    totalAmount += subTotal;
+                    itemsHtml += `
+                        <tr>
+                            <td>
+                                <div style="font-weight:500; font-size:0.95rem;">${projectName}</div>
+                                <div class="item-meta">
+                                    单价 ¥${unitPrice} × ${count}次
+                                </div>
+                            </td>
+                            <td class="money">
+                                ¥ ${subTotal.toFixed(2)}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            // 5. 组装最终 HTML
+            const html = `
+                <div class="info-row">
+                    <span class="info-label">技师姓名</span>
+                    <span class="info-val">${techName}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">统计月份</span>
+                    <span class="info-val" style="color:var(--md-sys-color-primary);">${monthStr}</span>
+                </div>
+
+                <div class="divider-dashed"></div>
+
+                <table class="item-list">
+                    <thead>
+                        <tr>
+                            <th>项目明细</th>
+                            <th style="text-align:right">小计</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+
+                <div class="divider-dashed"></div>
+
+                <div class="total-row">
+                    <span class="total-label">合计手工费</span>
+                    <span class="total-amount">¥ ${totalAmount.toFixed(2)}</span>
+                </div>
+            `;
+            
+            showData(html);
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>工资单 - 星丽仁系统</title>
+    <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        /* === MD3 紫色主题变量 (Purple) === */
+        :root { 
+            --md-sys-color-primary: #6750A4; 
+            --md-sys-color-on-primary: #FFFFFF; 
+            --md-sys-color-primary-container: #EADDFF; 
+            --md-sys-color-on-primary-container: #21005D; 
+            --md-sys-color-surface: #FDF8FD; 
+            --md-sys-color-surface-variant: #E7E0EC; 
+            --md-sys-color-on-surface: #1C1B1F; 
+            --md-sys-color-on-surface-variant: #49454F; 
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-error: #B3261E; 
+            --md-sys-color-success: #2E7D32;
+            
+            --radius-m: 16px; 
+            --shadow-2: 0px 4px 8px 3px rgba(0, 0, 0, 0.15); 
+            --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15); 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', 'Noto Sans SC', sans-serif; background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); min-height: 100vh; padding: 20px 16px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; padding-bottom: 40px; }
+        
+        /* 头部 */
+        .header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .header-text h1 { font-size: 24px; font-weight: 500; margin-bottom: 4px; color: var(--md-sys-color-on-surface); }
+        .header-text p { font-size: 14px; color: var(--md-sys-color-on-surface-variant); }
+        .user-badge { font-size: 13px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 4px 10px; border-radius: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+
+        /* 筛选区域 */
+        .filter-row { display: flex; gap: 10px; margin-bottom: 24px; }
+        .select-wrapper { flex: 1; position: relative; background: white; border-radius: 12px; box-shadow: var(--shadow-1); border: 1px solid transparent; transition: 0.3s; height: 48px; display: flex; align-items: center; }
+        .select-wrapper:focus-within { border-color: var(--md-sys-color-primary); box-shadow: 0 0 0 2px var(--md-sys-color-primary-container); }
+        
+        .custom-select { width: 100%; height: 100%; border: none; background: transparent; outline: none; padding: 0 12px; font-size: 15px; color: var(--md-sys-color-on-surface); appearance: none; -webkit-appearance: none; cursor: pointer; z-index: 2; }
+        .select-arrow { position: absolute; right: 12px; color: var(--md-sys-color-outline); pointer-events: none; z-index: 1; }
+
+        .search-btn { width: 100%; background: var(--md-sys-color-primary); color: white; border: none; padding: 12px; border-radius: 24px; font-weight: 500; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; box-shadow: var(--shadow-1); }
+        .search-btn:active { transform: scale(0.98); }
+
+        /* 工资卡片 */
+        .salary-card { 
+            background: #fff; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-2); 
+            position: relative; display: none; margin-top: 24px;
+            animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .salary-card.active { display: block; }
+        
+        .salary-card::before, .salary-card::after {
+            content: ""; position: absolute; left: 0; right: 0; height: 10px; 
+            background-size: 20px 20px; background-repeat: repeat-x; z-index: 2;
+        }
+        .salary-card::before { top: -5px; background-image: radial-gradient(circle at 10px 15px, transparent 8px, #6750A4 9px); }
+        .salary-card::after { bottom: -5px; background-image: radial-gradient(circle at 10px -5px, transparent 8px, #fff 9px); }
+
+        .card-header { background: var(--md-sys-color-primary); color: white; padding: 30px 24px 20px; text-align: center; position: relative; }
+        .month-tag { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 13px; display: inline-block; margin-bottom: 12px; letter-spacing: 0.5px; }
+        .main-amount-label { opacity: 0.9; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .eye-icon { cursor: pointer; opacity: 0.8; }
+        .main-amount { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 10px; cursor: pointer; }
+        .main-amount:active { opacity: 0.8; }
+        
+        .card-body { padding: 24px; }
+        
+        .detail-group-title { font-size: 12px; font-weight: 700; color: var(--md-sys-color-outline); margin: 16px 0 8px 0; text-transform: uppercase; letter-spacing: 1px; }
+        .detail-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; font-size: 15px; }
+        .detail-item:last-child { border-bottom: none; }
+        .item-label { color: var(--md-sys-color-on-surface-variant); }
+        .item-val { font-weight: 500; font-family: monospace; font-size: 16px; color: var(--md-sys-color-on-surface); }
+        .item-val.add { color: var(--md-sys-color-success); }
+        .item-val.minus { color: var(--md-sys-color-error); }
+        
+        .summary-row { background: var(--md-sys-color-surface-variant); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 2px dashed #fff; }
+        .summary-label { font-weight: 600; color: var(--md-sys-color-on-surface-variant); }
+        .summary-val { font-weight: 700; font-size: 18px; color: var(--md-sys-color-primary); }
+
+        /* 状态显示 */
+        .state-box { text-align: center; padding: 60px 0; color: var(--md-sys-color-outline); display: none; }
+        .state-box.active { display: block; }
+        .loading-spinner { font-size: 32px; color: var(--md-sys-color-primary); animation: spin 1s linear infinite; margin-bottom: 16px; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .hidden-val { filter: blur(6px); user-select: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-text">
+            <h1>我的工资</h1>
+            <p>Salary Slip</p>
+        </div>
+        <div id="userBadge" class="user-badge" style="display:none;">
+            <i class="ri-user-smile-line"></i> <span id="displayUserName">...</span>
+        </div>
+    </div>
+
+    <div class="filter-row">
+        <div class="select-wrapper">
+            <select id="yearSelect" class="custom-select"></select>
+            <i class="ri-arrow-down-s-line select-arrow"></i>
+        </div>
+        <div class="select-wrapper">
+            <select id="monthSelect" class="custom-select"></select>
+            <i class="ri-arrow-down-s-line select-arrow"></i>
+        </div>
+    </div>
+    <button class="search-btn" onclick="fetchSalaryData()">
+        <i class="ri-search-line"></i> 查询工资单
+    </button>
+
+    <div id="loading" class="state-box">
+        <i class="ri-loader-4-line loading-spinner"></i>
+        <p>正在拉取数据...</p>
+    </div>
+
+    <div id="infoState" class="state-box active">
+        <i class="ri-calendar-check-line" style="font-size:48px; opacity:0.5; margin-bottom:10px;"></i>
+        <p>请选择日期查询<br><span style="font-size:12px; opacity:0.7">数据仅本人可见</span></p>
+    </div>
+
+    <div id="salaryCard" class="salary-card">
+        <div class="card-header">
+            <span class="month-tag" id="displayMonth">...</span>
+            <div class="main-amount-label">
+                实发工资 <i class="ri-eye-line eye-icon" onclick="togglePrivacy()" id="eyeIcon"></i>
+            </div>
+            <div class="main-amount" id="netSalary" onclick="copyAmount(this.innerText)">¥ 0.00</div>
+            <div style="font-size:12px; opacity:0.8;">(点击金额可复制)</div>
+        </div>
+        
+        <div class="card-body" id="detailContainer">
+            </div>
+
+        <div class="summary-row">
+            <span class="summary-label">应发合计</span>
+            <span class="summary-val" id="grossSalary">¥ 0.00</span>
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-top:30px; color:#999; font-size:12px;">
+        <i class="ri-shield-check-line"></i> 星丽仁内部薪酬系统 · 严禁外传
+    </div>
+</div>
+
+<script>
+    let isPrivacyMode = false;
+    const CHINESE_MONTHS = ['一月份', '二月份', '三月份', '四月份', '五月份', '六月份', '七月份', '八月份', '九月份', '十月份', '十一月份', '十二月份'];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        initDateSelectors();
+        
+        try {
+            const userRes = await fetch('/api/user/info');
+            if (userRes.status === 401) { window.location.href = '/login.html'; return; }
+            const userData = await userRes.json();
+            if (userData.isLoggedIn) {
+                document.getElementById('displayUserName').innerText = userData.name || userData.phone;
+                document.getElementById('userBadge').style.display = 'inline-flex';
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    function initDateSelectors() {
+        const yearSel = document.getElementById('yearSelect');
+        const monthSel = document.getElementById('monthSelect');
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonthIdx = now.getMonth(); 
+
+        for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+            const opt = document.createElement('option');
+            opt.value = y + '年'; 
+            opt.text = y + '年';
+            if (y === currentYear) opt.selected = true;
+            yearSel.appendChild(opt);
+        }
+
+        CHINESE_MONTHS.forEach((m, idx) => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.text = m;
+            if (idx === currentMonthIdx) opt.selected = true;
+            monthSel.appendChild(opt);
+        });
+    }
+
+    async function fetchSalaryData() {
+        const yearVal = document.getElementById('yearSelect').value;
+        const monthVal = document.getElementById('monthSelect').value;
+        const queryStr = `${yearVal}-${monthVal}`;
+        
+        // 1. 切换到加载状态
+        showState('loading');
+
+        try {
+            const res = await fetch(`/api/wages?month=${encodeURIComponent(queryStr)}`);
+            if (!res.ok) throw new Error('Network response was not ok');
+            
+            const json = await res.json();
+            
+            if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+                // 成功：渲染卡片
+                renderCard(json.data[0]);
+                showState('card');
+            } else {
+                // 无数据
+                showState('empty', queryStr);
+            }
+        } catch (e) {
+            // 异常
+            showState('error');
+        }
+    }
+
+    // [关键修复] 状态管理逻辑
+    function showState(type, msgArg) {
+        const loading = document.getElementById('loading');
+        const info = document.getElementById('infoState');
+        const card = document.getElementById('salaryCard');
+
+        // 1. 强制隐藏所有
+        loading.classList.remove('active');
+        info.classList.remove('active');
+        card.classList.remove('active');
+        
+        // 2. 强制清除可能残留的 style (解决行内样式优先级问题)
+        loading.style.display = '';
+        info.style.display = '';
+        card.style.display = '';
+
+        // 3. 显示目标
+        if (type === 'loading') {
+            loading.classList.add('active');
+        } else if (type === 'card') {
+            card.classList.add('active');
+        } else if (type === 'empty') {
+            info.classList.add('active');
+            info.innerHTML = `
+                <i class="ri-inbox-2-line" style="font-size:48px; opacity:0.5; margin-bottom:10px;"></i>
+                <p>未查询到 [${msgArg}] 的工资单<br><span style="font-size:12px; opacity:0.7">可能尚未发放，请确认日期</span></p>
+            `;
+        } else if (type === 'error') {
+            info.classList.add('active');
+            info.innerHTML = `
+                <i class="ri-wifi-off-line" style="font-size:48px; opacity:0.5; margin-bottom:10px;"></i>
+                <p>暂时无法获取数据<br><span style="font-size:12px; opacity:0.7">请稍后重试或联系管理员</span></p>
+            `;
+        }
+    }
+
+    function renderCard(data) {
+        const f = data.fields || data;
+
+        document.getElementById('displayMonth').innerText = f['月份'] || '未知月份';
+        document.getElementById('netSalary').innerText = formatMoney(f['实发工资']);
+        document.getElementById('grossSalary').innerText = formatMoney(f['应发工资']);
+
+        const container = document.getElementById('detailContainer');
+        let html = '';
+
+        const incomes = [
+            { label: '基本工资', key: '基本工资' },
+            { label: '业绩提成', key: '业绩提成' },
+            { label: '手工费', key: '手工' },
+            { label: '加班费', key: '加班' },
+            { label: '餐补', key: '餐补' }
+        ];
+        
+        const deductions = [
+            { label: '考勤扣款', key: '考勤' },
+            { label: '社保个人', key: '社保' },
+            { label: '个人所得税', key: '个税' }
+        ];
+
+        html += `<div class="detail-group-title">应发项目</div>`;
+        incomes.forEach(item => {
+            const val = parseFloat(f[item.key] || 0);
+            if (val !== 0) html += createRow(item.label, val, true);
+        });
+
+        html += `<div class="detail-group-title" style="margin-top:16px;">扣款项目</div>`;
+        let hasDeduction = false;
+        deductions.forEach(item => {
+            let val = parseFloat(f[item.key] || 0);
+            if (val !== 0) {
+                hasDeduction = true;
+                html += createRow(item.label, Math.abs(val), false);
+            }
+        });
+        if (!hasDeduction) html += `<div style="font-size:13px; color:#ccc; padding:5px 0;">无扣款项</div>`;
+
+        container.innerHTML = html;
+        
+        if (isPrivacyMode) applyPrivacy(true);
+    }
+
+    function createRow(label, amount, isAdd) {
+        const sign = isAdd ? '+' : '-';
+        const colorClass = isAdd ? 'add' : 'minus';
+        return `
+            <div class="detail-item">
+                <span class="item-label">${label}</span>
+                <span class="item-val ${colorClass}">${sign}${Number(amount).toLocaleString()}</span>
+            </div>
+        `;
+    }
+
+    function formatMoney(val) {
+        return `¥ ${Number(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    function togglePrivacy() {
+        isPrivacyMode = !isPrivacyMode;
+        applyPrivacy(isPrivacyMode);
+    }
+
+    function applyPrivacy(isHidden) {
+        const icon = document.getElementById('eyeIcon');
+        const amounts = document.querySelectorAll('.item-val, .main-amount, .summary-val');
+        
+        if (isHidden) {
+            icon.className = 'ri-eye-off-line eye-icon';
+            amounts.forEach(el => el.classList.add('hidden-val'));
+        } else {
+            icon.className = 'ri-eye-line eye-icon';
+            amounts.forEach(el => el.classList.remove('hidden-val'));
+        }
+    }
+
+    function copyAmount(text) {
+        if (isPrivacyMode) return;
+        const num = text.replace(/[^\d.]/g, '');
+        navigator.clipboard.writeText(num).then(() => alert('金额已复制'));
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美容师手工数据接口测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding: 20px; background: #f5f5f5; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .status-bar { padding: 10px; margin-bottom: 20px; border-radius: 4px; background: #e9ecef; }
+        .status-bar.logged-in { background: #d4edda; color: #155724; }
+        .status-bar.logged-out { background: #f8d7da; color: #721c24; }
+        
+        button { cursor: pointer; padding: 10px 20px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 4px; transition: background 0.3s; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .section { margin-top: 30px; }
+        pre { background: #2d2d2d; color: #ccc; padding: 15px; border-radius: 5px; overflow-x: auto; max-height: 300px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .empty-tip { color: #999; font-style: italic; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔌 手工数据接口测试</h1>
+    
+    <div id="authStatus" class="status-bar">正在检查登录状态...</div>
+
+    <div>
+        <button id="btnFetch" onclick="fetchManualData()" disabled>📡 调用 /api/manual/data</button>
+        <span id="loading" style="display:none; margin-left: 10px;">⏳ 请求中，WPS 可能需要几秒钟...</span>
+    </div>
+
+    <div class="section">
+        <h3>📊 数据预览 (解析后)</h3>
+        <div id="tableContainer">
+            <p class="empty-tip">点击上方按钮获取数据</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📝 原始响应 (Raw JSON)</h3>
+        <pre id="jsonOutput">// 等待请求...</pre>
+    </div>
+</div>
+
+<script>
+    // 页面加载时检查登录状态
+    window.onload = checkLoginStatus;
+
+    async function checkLoginStatus() {
+        const statusDiv = document.getElementById('authStatus');
+        const btn = document.getElementById('btnFetch');
+        try {
+            const res = await fetch('/api/user/info');
+            const data = await res.json();
+            
+            if (data.isLoggedIn) {
+                statusDiv.className = 'status-bar logged-in';
+                statusDiv.textContent = `✅ 已登录 | 用户: ${data.name} | 电话: ${data.phone} | 身份: ${data.role}`;
+                btn.disabled = false;
+            } else {
+                statusDiv.className = 'status-bar logged-out';
+                statusDiv.innerHTML = `❌ 未登录 <a href="/login.html">去登录</a>`;
+                btn.disabled = true;
+            }
+        } catch (e) {
+            statusDiv.textContent = '❌ 状态检查失败: ' + e.message;
+        }
+    }
+
+    async function fetchManualData() {
+        const btn = document.getElementById('btnFetch');
+        const loading = document.getElementById('loading');
+        const jsonOut = document.getElementById('jsonOutput');
+        const tableContainer = document.getElementById('tableContainer');
+
+        btn.disabled = true;
+        loading.style.display = 'inline';
+        jsonOut.textContent = 'Requesting...';
+        tableContainer.innerHTML = '';
+
+        try {
+            // === 核心：调用您刚才写的新接口 ===
+            const res = await fetch('/api/manual/data');
+            const result = await res.json();
+
+            // 1. 展示原始 JSON
+            jsonOut.textContent = JSON.stringify(result, null, 2);
+
+            if (result.success && Array.isArray(result.data)) {
+                renderTable(result.data);
+            } else {
+                tableContainer.innerHTML = `<p style="color:red">⚠️ 数据格式异常或获取失败: ${result.error || '未知错误'}</p>`;
+            }
+
+        } catch (err) {
+            jsonOut.textContent = 'Request Failed: ' + err.message;
+            tableContainer.innerHTML = `<p style="color:red">❌ 请求发生错误</p>`;
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    }
+
+    function renderTable(data) {
+        const container = document.getElementById('tableContainer');
+        if (data.length === 0) {
+            container.innerHTML = '<p class="empty-tip">📭 WPS 返回了空数组 (没有数据)</p>';
+            return;
+        }
+
+        // 尝试提取表头 (取第一条数据的 keys)
+        // 兼容处理：WPS 返回的数据可能是 { fields: {...} } 结构，也可能直接是平铺对象
+        const firstItem = data[0].fields || data[0]; 
+        const headers = Object.keys(firstItem);
+
+        let html = '<table><thead><tr>';
+        headers.forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+
+        data.forEach(row => {
+            const fields = row.fields || row;
+            html += '<tr>';
+            headers.forEach(key => {
+                let val = fields[key];
+                // 如果是对象（例如日期格式），尝试转字符串
+                if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
+                html += `<td>${val || ''}</td>`;
+            });
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
