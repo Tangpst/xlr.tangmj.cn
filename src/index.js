@@ -7,6 +7,8 @@ const { handleSchedulerRequest } = require('./scheduler.js');
 const { Auth, Jwt } = require('./auth.js');
 const { WPS } = require('./wps.js'); // 确保引入 WPS
 const { fetchManualData } = require('./manual_data.js'); // 【新增】引入手工数据服务
+const { fetchWagesData } = require('./wages.js'); // 【新增】引入工资服务
+
 
 const app = express();
 
@@ -124,6 +126,36 @@ app.get('/api/app/menu', async (req, res) => {
         res.json(result);
     } catch (e) { res.status(500).json({ error: '获取菜单失败' }); }
 });
+// 【新增】工资查询接口
+app.get('/api/wages', async (req, res) => {
+    try {
+        // 1. 鉴权
+        const token = req.cookies.auth_token;
+        if (!token) return res.status(401).json({ error: '未登录' });
+        
+        const user = await Jwt.verify(token, process.env.JWT_SECRET);
+        if (!user || !user.phone) return res.status(401).json({ error: 'Token 无效' });
+
+        // 2. 获取参数 (月份)
+        // 客户端请求示例: /api/wages?month=2025/11
+        const { month } = req.query;
+        if (!month) {
+            return res.status(400).json({ error: '缺少月份参数 (month)' });
+        }
+
+        // 3. 调用服务
+        const data = await fetchWagesData(user.phone, month);
+        
+        // 4. 返回结果
+        res.json({ success: true, data: data });
+
+    } catch (e) {
+        console.error("❌ 获取工资失败:", e);
+        res.status(500).json({ error: '获取数据失败' });
+    }
+});
+
+
 
 // 【新增】美容师手工数据接口
 app.get('/api/manual/data', async (req, res) => {
