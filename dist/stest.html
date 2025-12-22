@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工资接口测试</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding: 20px; background: #f5f5f5; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #6750A4; }
+        
+        /* 状态栏 */
+        .status-bar { padding: 10px; margin-bottom: 20px; border-radius: 4px; background: #e9ecef; border-left: 5px solid #ccc; }
+        .status-bar.logged-in { background: #e8f5e9; border-left-color: #2e7d32; color: #1b5e20; }
+        .status-bar.logged-out { background: #ffebee; border-left-color: #c62828; color: #b71c1c; }
+
+        /* 控制区 */
+        .controls { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #e9ecef; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        input[type="text"] { padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 16px; width: 200px; }
+        button { cursor: pointer; padding: 10px 20px; font-size: 16px; background: #6750A4; color: white; border: none; border-radius: 4px; transition: background 0.3s; }
+        button:hover { background: #513d87; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* 结果展示 */
+        .section { margin-top: 30px; }
+        .section h3 { border-left: 4px solid #6750A4; padding-left: 10px; margin-bottom: 15px; }
+        
+        pre { background: #2d2d2d; color: #83ff83; padding: 15px; border-radius: 5px; overflow-x: auto; max-height: 300px; font-family: 'Consolas', monospace; font-size: 13px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; color: #333; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .empty-tip { color: #999; font-style: italic; padding: 20px; text-align: center; border: 1px dashed #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💰 工资接口测试 (API Test)</h1>
+    
+    <div id="authStatus" class="status-bar">正在检查登录状态...</div>
+
+    <div class="controls">
+        <div>
+            <label for="monthInput" style="font-weight:500; margin-right:5px;">查询月份:</label>
+            <input type="text" id="monthInput" placeholder="例如: 2024/11" value="2024/11">
+        </div>
+        <button id="btnFetch" onclick="fetchWages()" disabled>🚀 查询工资 /api/wages</button>
+        <span id="loading" style="display:none; color:#666;">⏳ 请求 WPS 中...</span>
+    </div>
+    <div style="font-size:12px; color:#666; margin-top:5px; margin-left:5px;">
+        * 提示：WPS 脚本中是精确匹配，请确保输入的月份格式与表格中一致 (如 "2024-11" 或 "2024/11")
+    </div>
+
+    <div class="section">
+        <h3>📊 渲染结果 (Table)</h3>
+        <div id="tableContainer">
+            <div class="empty-tip">暂无数据，请点击上方按钮查询</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📝 原始响应 (Raw JSON)</h3>
+        <pre id="jsonOutput">// 等待请求...</pre>
+    </div>
+</div>
+
+<script>
+    // 页面加载时检查登录状态
+    window.onload = checkLoginStatus;
+
+    async function checkLoginStatus() {
+        const statusDiv = document.getElementById('authStatus');
+        const btn = document.getElementById('btnFetch');
+        try {
+            const res = await fetch('/api/user/info');
+            const data = await res.json();
+            
+            if (data.isLoggedIn) {
+                statusDiv.className = 'status-bar logged-in';
+                statusDiv.textContent = `✅ 已登录 | 用户: ${data.name} (${data.phone})`;
+                btn.disabled = false;
+            } else {
+                statusDiv.className = 'status-bar logged-out';
+                statusDiv.innerHTML = `❌ 未登录 <a href="/login.html" style="color:inherit;text-decoration:underline;">去登录</a>`;
+                btn.disabled = true;
+            }
+        } catch (e) {
+            statusDiv.textContent = '❌ 状态检查失败: ' + e.message;
+        }
+    }
+
+    async function fetchWages() {
+        const btn = document.getElementById('btnFetch');
+        const monthInput = document.getElementById('monthInput');
+        const loading = document.getElementById('loading');
+        const jsonOut = document.getElementById('jsonOutput');
+        const tableContainer = document.getElementById('tableContainer');
+
+        const monthVal = monthInput.value.trim();
+        if (!monthVal) {
+            alert("请输入月份！");
+            return;
+        }
+
+        btn.disabled = true;
+        loading.style.display = 'inline';
+        jsonOut.textContent = 'Requesting...';
+        tableContainer.innerHTML = '<div class="empty-tip">加载中...</div>';
+
+        try {
+            // === 调用接口 ===
+            // 注意：参数名 month 要对应后端 req.query.month
+            const url = `/api/wages?month=${encodeURIComponent(monthVal)}`;
+            const res = await fetch(url);
+            const result = await res.json();
+
+            // 1. 展示 JSON
+            jsonOut.textContent = JSON.stringify(result, null, 2);
+
+            // 2. 渲染表格
+            if (result.success && Array.isArray(result.data)) {
+                renderTable(result.data);
+            } else if (result.error) {
+                tableContainer.innerHTML = `<p style="color:red">⚠️ 接口报错: ${result.error}</p>`;
+            } else {
+                tableContainer.innerHTML = `<p style="color:red">⚠️ 数据格式异常或为空</p>`;
+            }
+
+        } catch (err) {
+            jsonOut.textContent = 'Request Failed: ' + err.message;
+            tableContainer.innerHTML = `<p style="color:red">❌ 请求发生错误</p>`;
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    }
+
+    function renderTable(data) {
+        const container = document.getElementById('tableContainer');
+        if (data.length === 0) {
+            container.innerHTML = '<div class="empty-tip">📭 查询成功，但没有返回任何记录 (可能是月份不匹配或该月无数据)</div>';
+            return;
+        }
+
+        // 尝试提取表头
+        // WPS AirScript 返回的数据通常是 { fields: {...}, id: ... } 或者是直接的对象
+        const firstItem = data[0].fields || data[0]; 
+        const headers = Object.keys(firstItem);
+
+        let html = '<table><thead><tr>';
+        headers.forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+
+        data.forEach(row => {
+            const fields = row.fields || row;
+            html += '<tr>';
+            headers.forEach(key => {
+                let val = fields[key];
+                if (typeof val === 'object' && val !== null) val = JSON.stringify(val); // 处理数组或对象字段
+                html += `<td>${val === undefined || val === null ? '' : val}</td>`;
+            });
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>

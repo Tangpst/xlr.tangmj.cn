@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>当日预约表</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="./js/auth.js"></script>
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/remixicon.css" rel="stylesheet">
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     
@@ -111,7 +112,7 @@
         </div>
     </div>
 
-    <div class="filter-tabs" v-if="currentUserRole !== '美容师'">
+    <div class="filter-tabs" v-if="authUser.role !== '美容师'">
         <button class="filter-chip" :class="{ active: currentTab === '全部' }" @click="currentTab = '全部'">
             <i class="ri-check-line"></i> 全部
         </button>
@@ -187,6 +188,9 @@
 
     createApp({
         setup() {
+            // 【集成】引入 auth.js 的功能
+            const { authUser, fetchUser, isShareholder, isMe } = window.useAuth();
+
             const getTodayDate = () => {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -197,32 +201,10 @@
 
             const searchDate = ref(getTodayDate());
             const currentTab = ref('全部');
-            
-            // 用户信息
-            const currentUserPhone = ref('');
-            const currentUserRole = ref('');
-            
             const rawData = ref([]);
             const restingList = ref([]);
             const loading = ref(false);
-
             const API_URL = './api/scheduler';
-
-            // 1. 获取用户信息 (增加 role 获取)
-            const fetchUserInfo = async () => {
-                try {
-                    const res = await fetch('/api/user/info');
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.isLoggedIn) {
-                            currentUserPhone.value = String(data.phone || '');
-                            currentUserRole.value = data.role || '员工'; // 获取角色
-                        }
-                    }
-                } catch (e) {
-                    console.error("获取用户信息失败", e);
-                }
-            };
 
             const extractWpsData = (json) => {
                 if (!json || !json.success) return [];
@@ -251,7 +233,7 @@
                 return [val];
             };
 
-          const loadScheduleData = async () => {
+            const loadScheduleData = async () => {
                 loading.value = true;
                 rawData.value = [];
                 restingList.value = [];
@@ -288,15 +270,12 @@
 
                         // === 隐私逻辑 (股东特例) ===
                         const realName = f['客户姓名'];
-                        
-                        // 获取提交人手机号，判断是否是当前用户提交的
                         const submitterPhone = f['提交电话'] || f['submitter'] || ''; 
-                        const isMine = String(submitterPhone) === String(currentUserPhone.value);
-
+                        
                         let displayClient = realName;
 
-                        // 逻辑：如果是股东，且不是自己提交的数据，则屏蔽姓名
-                        if (currentUserRole.value === '股东' && !isMine) {
+                        // 逻辑：如果是股东，且这条记录不是自己提交的，则屏蔽姓名
+                        if (isShareholder.value && !isMe(submitterPhone)) {
                             displayClient = '***';
                         }
                         
@@ -316,7 +295,7 @@
                     });
 
                     // 角色过滤逻辑 (美容师只看生活美容)
-                    if (currentUserRole.value === '美容师') {
+                    if (authUser.role === '美容师') {
                         processedData = processedData.filter(item => 
                             item.depts && item.depts.includes('生活美容')
                         );
@@ -349,10 +328,7 @@
                 if (rawData.value.length === 0) return [];
 
                 return rawData.value.filter(item => {
-                    // 如果是美容师，数据源已经被过滤过了，这里只需要响应 tab (虽然 UI 隐藏了 tab)
-                    // 或者为了保险，再次确认
-                    if (currentUserRole.value === '美容师') return true; 
-
+                    // 美容师已在 loadScheduleData 中过滤，这里仅响应手动 tab 切换
                     if (currentTab.value === '全部') return true;
                     return item.depts && item.depts.includes(currentTab.value);
                 }).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -365,14 +341,14 @@
             };
 
             onMounted(async () => {
-                await fetchUserInfo(); // 必须先获取用户信息和角色
+                await fetchUser(); // 先获取用户角色
                 loadScheduleData();
             });
 
             return {
                 searchDate,
                 currentTab,
-                currentUserRole, // 暴露给模板使用
+                authUser, // 暴露给模板 (用于 v-if="authUser.role !== ...")
                 filteredSchedule,
                 restingList,
                 loading,

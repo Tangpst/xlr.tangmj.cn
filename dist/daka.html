@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>预约服务</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="./js/auth.js"></script>
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     <link rel="stylesheet" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/font-awesome.css">
     
@@ -105,6 +106,9 @@
 
     createApp({
         setup() {
+            // 【集成】引入 auth.js 逻辑
+            const { authUser, fetchUser } = window.useAuth();
+
             const API_BASE = './api/scheduler'; 
             const defaultServices = ['面部清洁', '光子嫩肤', '水光针', '身体护理'];
             const serviceList = ref([...defaultServices]);
@@ -115,9 +119,6 @@
             const submitting = ref(false);
             const errorMsg = ref('');
             
-            // 存储当前登录用户的手机号
-            const currentUserPhone = ref('');
-
             const getToday = () => {
                 const d = new Date();
                 return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -134,22 +135,6 @@
             });
 
             const formatDateParam = (dateStr) => dateStr ? dateStr.replace(/-/g, '/') : '';
-
-            // 获取当前用户信息
-            const fetchUserInfo = async () => {
-                try {
-                    const res = await fetch('/api/user/info');
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.isLoggedIn && data.phone) {
-                            currentUserPhone.value = data.phone;
-                            console.log("【当前用户】", currentUserPhone.value);
-                        }
-                    }
-                } catch (e) {
-                    console.error("获取用户信息失败", e);
-                }
-            };
 
             const extractRecords = (json) => {
                 if (!json || !json.success) return [];
@@ -301,11 +286,9 @@
                         services: form.services,
                         startTime: form.startTime,
                         duration: Number(form.duration),
-                        submitter: currentUserPhone.value,
+                        submitter: authUser.phone, // 使用 auth.js 中的手机号
                         notes: form.notes // 【新增】提交备注
                     };
-
-                    console.log("【调试】提交 Payload:", JSON.stringify(payload, null, 2));
 
                     const res = await fetch(API_BASE, {
                         method: 'POST',
@@ -346,8 +329,8 @@
             });
 
             onMounted(() => {
+                fetchUser(); // 使用 auth.js 获取用户
                 fetchDailyData();
-                fetchUserInfo();
             });
 
             return { form, availableTechs, serviceList, loadingTechs, submitting, errorMsg, newServiceInput, addService, toggleTech, isTechSelected, toggleService, handleSubmit, isValid, fetchDailyData };
