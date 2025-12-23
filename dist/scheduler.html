@@ -74,6 +74,32 @@
         .dept-life { background: var(--dept-life-bg); color: var(--dept-life-text); }
         .remark-text { font-size: 0.85rem; color: #666; background: #f9f9f9; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
         .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: var(--radius-l); border: 1px dashed var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface-variant); }
+        
+        /* [新增] 取消按钮样式 */
+        .cancel-btn {
+            margin-top: 4px;
+            padding: 4px 12px;
+            background-color: #fff;
+            border: 1px solid #ff4d4f;
+            color: #ff4d4f;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .cancel-btn:hover {
+            background-color: #fff1f0;
+        }
+        .cancel-btn:disabled {
+            border-color: #d9d9d9;
+            color: #d9d9d9;
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+
         @media (max-width: 768px) {
             body { padding: 16px 12px; }
             .header h1 { font-size: 1.4rem; }
@@ -179,6 +205,15 @@
                     <div class="tech-avatar">{{ item.tech.charAt(0) }}</div>
                     <span class="tech-name">{{ item.tech }}</span>
                 </div>
+
+                <button 
+                    v-if="canCancel(item)" 
+                    @click="handleCancel(item)" 
+                    :disabled="item.isCanceling"
+                    class="cancel-btn">
+                    <i class="ri-delete-bin-line" v-if="!item.isCanceling"></i>
+                    {{ item.isCanceling ? '...' : '取消' }}
+                </button>
             </div>
         </div>
     </div>
@@ -233,6 +268,63 @@
                 return [val];
             };
 
+            // [新增] 权限判断函数
+            const canCancel = (item) => {
+                const role = authUser.role;
+                // 1. 美容师和护士：无法取消
+                if (role === '美容师' || role === '护士') {
+                    return false;
+                }
+                // 2. 股东：只可取消自己提交的
+                if (role === '股东') {
+                    // 注意：这里依赖于数据表中必须有记录提交人信息的字段
+                    return isMe(item.submitterPhone);
+                }
+                // 3. 其他角色（如管理员）：可以全部取消
+                return true;
+            };
+
+            // [新增] 取消预约处理函数
+            const handleCancel = async (item) => {
+                if (!confirm(`确定要取消【${item.client}】的预约吗？此操作无法撤销。`)) {
+                    return;
+                }
+
+                if (!item.customId) {
+                    alert("该条数据没有ID，无法执行取消操作。");
+                    return;
+                }
+
+                try {
+                    item.isCanceling = true;
+                    // Webhook 地址
+                    
+                    const webhookUrl = './api/cancel_schedule'; // 现在的
+                    const res = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ "ID": item.customId }) // 传入取消预约的ID
+                    });
+
+                    if (res.ok) {
+                        alert('取消预约成功');
+                        // 刷新当前列表
+                        loadScheduleData();
+                    } else {
+                        const errText = await res.text();
+                        console.error('Cancel failed:', errText);
+                        alert('取消失败，请稍后重试');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('网络请求出错');
+                } finally {
+                    if (item) item.isCanceling = false;
+                }
+            };
+
             const loadScheduleData = async () => {
                 loading.value = true;
                 rawData.value = [];
@@ -270,8 +362,11 @@
 
                         // === 隐私逻辑 (股东特例) ===
                         const realName = f['客户姓名'];
-                        const submitterPhone = f['提交电话'] || f['submitter'] || ''; 
-                        
+                        // 获取提交人手机号，兼容多种字段名可能
+                        const submitterPhone = f['提交电话'] || f['submitter'] || f['提交人手机'] || ''; 
+                        // [新增] 获取表格中的 ID 字段
+                        const customId = f['ID']; 
+
                         let displayClient = realName;
 
                         // 逻辑：如果是股东，且这条记录不是自己提交的，则屏蔽姓名
@@ -280,17 +375,20 @@
                         }
                         
                         return {
-                            id: item.id,
+                            id: item.id, // 原始记录ID (可能也是 string)
+                            customId: customId, // [新增] 绑定的业务ID，用于删除
+                            submitterPhone: submitterPhone, // [新增] 用于权限判断
                             date: f['日期'] || searchDate.value,
                             client: realName, 
-                            displayClient: displayClient, // 使用计算后的显示名
+                            displayClient: displayClient, 
                             tech: parseDisplayValue(f['技师&护士']) || '待定', 
                             depts: deptArr,
                             service: serviceArr,
                             startTime: (f['预约时间'] || '').substring(0, 5),
                             endTime: (f['结束时间'] || '').substring(0, 5),
                             duration: f['时长'] ||  0,
-                            remark: f['备注'] || ''
+                            remark: f['备注'] || '',
+                            isCanceling: false // [新增] UI状态
                         };
                     });
 
@@ -353,7 +451,9 @@
                 restingList,
                 loading,
                 loadScheduleData,
-                getTagClass
+                getTagClass,
+                canCancel,    // [新增]
+                handleCancel  // [新增]
             }
         }
     }).mount('#app');

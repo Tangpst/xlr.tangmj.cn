@@ -1,13 +1,14 @@
-// src/index.js (修复版 + 新增 ManualData)
+// src/index.js (修复版：解决 getBody is not defined 错误)
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const { handleWpsRequest } = require('./wps_routes.js');
-const { handleSchedulerRequest } = require('./scheduler.js');
+// 【修改1】同时引入 handleCancelRequest
+const { handleSchedulerRequest, handleCancelRequest } = require('./scheduler.js');
 const { Auth, Jwt } = require('./auth.js');
-const { WPS } = require('./wps.js'); // 确保引入 WPS
-const { fetchManualData } = require('./manual_data.js'); // 【新增】引入手工数据服务
-const { fetchWagesData } = require('./wages.js'); // 【新增】引入工资服务
+const { WPS } = require('./wps.js'); 
+const { fetchManualData } = require('./manual_data.js'); 
+const { fetchWagesData } = require('./wages.js'); 
 
 
 const app = express();
@@ -47,26 +48,21 @@ app.post('/api/auth/send', async (req, res) => {
     } catch (e) { res.status(400).send('格式错误'); }
 });
 
-// [核心修复] 登录接口
+// 登录接口
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { phone, code } = req.body;
         const isValid = await Auth.verifyLogin(phone, code);
         if (!isValid) return res.status(400).send('验证码错误');
 
-        // 1. 获取完整信息 (包含身份 role)
         const userInfo = await Auth.getUserInfo(phone) || {};
         const name = userInfo.name || '员工';
         const role = userInfo.role || '员工';
 
-        // 2. 签发 Token (包含 role)
         const token = await Jwt.sign({ phone, name, role }, process.env.JWT_SECRET);
 
-        // 3. 设置 Cookie
-        // [注意] secure: false 允许 http 访问。如果生产环境是 https，可以改为 true
         res.cookie('auth_token', token, { httpOnly: true, secure: false, maxAge: 604800000 });
         
-        // 4. 返回 JSON (包含 role 给前端缓存)
         res.json({ success: true, name, role });
     } catch (e) { 
         console.error(e);
@@ -74,7 +70,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// [核心修复] 用户信息接口
+// 用户信息接口
 app.get('/api/user/info', async (req, res) => {
     try {
         const token = req.cookies.auth_token;
@@ -83,7 +79,6 @@ app.get('/api/user/info', async (req, res) => {
         const user = await Jwt.verify(token, process.env.JWT_SECRET);
         
         if (user && user.phone) {
-            // 补全 role 逻辑
             let displayName = user.name;
             let displayRole = user.role;
 
@@ -103,7 +98,7 @@ app.get('/api/user/info', async (req, res) => {
     } catch (e) { res.status(500).json({ error: '系统错误' }); }
 });
 
-// [新增] 菜单接口 (配合首页显示)
+// 菜单接口
 app.get('/api/app/menu', async (req, res) => {
     try {
         const token = req.cookies.auth_token;
@@ -126,61 +121,47 @@ app.get('/api/app/menu', async (req, res) => {
         res.json(result);
     } catch (e) { res.status(500).json({ error: '获取菜单失败' }); }
 });
-// 【新增】工资查询接口
+
+// 工资查询接口
 app.get('/api/wages', async (req, res) => {
     try {
-        // 1. 鉴权
         const token = req.cookies.auth_token;
         if (!token) return res.status(401).json({ error: '未登录' });
         
         const user = await Jwt.verify(token, process.env.JWT_SECRET);
         if (!user || !user.phone) return res.status(401).json({ error: 'Token 无效' });
 
-        // 2. 获取参数 (月份)
-        // 客户端请求示例: /api/wages?month=2025/11
         const { month } = req.query;
         if (!month) {
             return res.status(400).json({ error: '缺少月份参数 (month)' });
         }
 
-        // 3. 调用服务
         const data = await fetchWagesData(user.phone, month);
-        
-        // 4. 返回结果
         res.json({ success: true, data: data });
-
     } catch (e) {
         console.error("❌ 获取工资失败:", e);
         res.status(500).json({ error: '获取数据失败' });
     }
 });
 
-
-
-// 【新增】美容师手工数据接口
+// 美容师手工数据接口
 app.get('/api/manual/data', async (req, res) => {
     try {
-        // 1. 鉴权
         const token = req.cookies.auth_token;
         if (!token) return res.status(401).json({ error: '未登录' });
         
         const user = await Jwt.verify(token, process.env.JWT_SECRET);
         if (!user || !user.phone) return res.status(401).json({ error: 'Token 无效' });
 
-        // 2. 调用新服务获取数据
-        // 直接使用当前登录用户的手机号去查询
         const data = await fetchManualData(user.phone);
-        
-        // 3. 返回结果
         res.json({ success: true, data: data });
-
     } catch (e) {
         console.error("❌ 获取手工数据失败:", e);
         res.status(500).json({ error: '获取数据失败' });
     }
 });
 
-// 业务 API
+// 业务 API 中间件：注入 currentUserPhone
 app.use('/api', async (req, res, next) => {
     if (req.path === '/scheduler' && req.method === 'POST') {
         const token = req.cookies.auth_token;
@@ -192,6 +173,8 @@ app.use('/api', async (req, res, next) => {
     next();
 });
 
+// === Scheduler 相关接口 ===
+
 app.all('/api/scheduler', (req, res) => {
     const mockRequest = {
         url: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
@@ -200,6 +183,20 @@ app.all('/api/scheduler', (req, res) => {
     };
     sendWorkerResponse(res, handleSchedulerRequest(mockRequest, req.body));
 });
+
+// 【修改2】新增取消预约的接口路由
+app.post('/api/cancel_schedule', (req, res) => {
+    // 构造一个模拟的 Request 对象传给 handler
+    const mockRequest = {
+        url: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
+        method: req.method,
+        headers: { get: (name) => req.get(name) },
+    };
+    // 直接使用 express 解析好的 req.body
+    sendWorkerResponse(res, handleCancelRequest(mockRequest, req.body));
+});
+
+// === 其他接口 ===
 
 app.all(['/api/v1', '/api/v2', '/api/v3', '/api/v4'], (req, res) => {
     const mockRequest = {

@@ -27,7 +27,7 @@ resources:
         NODE_PATH: /opt/nodejs/node_modules
         PATH: >-
           /var/fc/lang/nodejs20/bin:/usr/local/bin/apache-maven/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ruby/bin:/opt/bin:/code:/code/bin
-        USER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-7xYd9L2DyfwnqXNSniBDic/sync_task"
+        USER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6L49fH34TqHkAUUeT3ipiT/sync_task"
         ARTICLE_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6iqagVWgbrZYgK8JI9X7Gh/sync_task"
         TRAINING_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/434778932041/script/V2-6wDyIyzwC5KPQbKrFHZCv1/sync_task"
         CLINIC_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/470940545687/script/V2-77tUiOsBGXIM5JRyzQezyw/sync_task" 

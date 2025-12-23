@@ -130,4 +130,33 @@ function createJsonParams(data, status) {
   };
 }
 
-module.exports = { handleSchedulerRequest };
+// [新增] 代理取消预约的请求
+async function handleCancelRequest(request, parsedBody) {
+  const webhookUrl = "https://www.kdocs.cn/chatflow/api/v2/func/webhook/37DwkdKOsVQyq0dQ7ZVZQqGXg0U";
+  
+  try {
+    // 后端发起请求，不受 CORS 限制
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(parsedBody),
+    });
+
+    // 获取远程响应并返回给前端
+    if (res.ok) {
+        return createJsonParams({ success: true, message: "删除成功" }, 200);
+    } else {
+        const text = await res.text();
+        return createJsonParams({ success: false, error: "远程接口错误: " + text }, res.status);
+    }
+
+  } catch (err) {
+    console.error("Webhook Proxy Error:", err);
+    return createJsonParams({ success: false, error: "代理请求失败: " + err.message }, 500);
+  }
+}
+
+// 修改导出，加入 handleCancelRequest
+module.exports = { handleSchedulerRequest, handleCancelRequest };
