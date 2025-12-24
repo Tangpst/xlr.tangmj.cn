@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>股东提成中心</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="./js/auth.js"></script>
+    <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/remixicon.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #6750A4;
+            --money-color: #B3261E;
+            --text-main: #1C1B1F;
+            --text-sub: #49454F;
+            --bg-color: #f7f9fc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px 16px;
+            color: var(--text-main);
+        }
+
+        .container { max-width: 600px; margin: 0 auto; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+        .user-info { font-size: 0.9rem; color: var(--text-sub); display: flex; align-items: center; gap: 4px; }
+
+        /* === 汇总大卡片 (布局升级) === */
+        .summary-card {
+            background: linear-gradient(135deg, #7F66BE 0%, #5E4598 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(103, 80, 164, 0.25);
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 装饰背景圆圈 */
+        .summary-card::after {
+            content: "";
+            position: absolute;
+            top: -30px; right: -30px;
+            width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* 统计数据行：左右两栏 */
+        .stats-row {
+            display: flex;
+            align-items: flex-start; /* 顶部对齐 */
+            justify-content: space-between;
+            margin-bottom: 20px; /* 与下方选择器拉开距离 */
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-item {
+            flex: 1; /* 平分宽度 */
+        }
+        
+        /* 右侧对齐 */
+        .stat-item.right {
+            text-align: right;
+            padding-left: 15px;
+            border-left: 1px solid rgba(255,255,255,0.2); /* 中间分割线 */
+        }
+
+        .summary-label { font-size: 0.85rem; opacity: 0.85; margin-bottom: 6px; }
+        
+        .summary-total { 
+            font-size: 1.8rem; /* 稍微调小一点以适应双栏 */
+            font-weight: 700; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            line-height: 1.1; 
+            white-space: nowrap; /* 防止换行 */
+        }
+        .symbol { font-size: 1.1rem; margin-right: 2px; font-weight: 500; }
+        
+        /* === 选择器样式 === */
+        .date-picker-row {
+            display: flex;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .select-wrapper { position: relative; flex: 1; }
+        
+        .custom-select {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .custom-select option { background: #fff; color: #333; }
+        
+        .select-arrow {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            pointer-events: none; color: rgba(255, 255, 255, 0.8); font-size: 1.2rem;
+        }
+
+        /* === 列表区域 === */
+        .list-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 600; color: #444; }
+        .record-count { font-weight: normal; color: var(--text-sub); font-size: 0.85rem; }
+        
+        .record-list { display: flex; flex-direction: column; gap: 12px; }
+        
+        .record-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: transform 0.1s;
+        }
+        .record-card:active { transform: scale(0.98); background: #fafafa; }
+        
+        .client-info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        
+        .client-name { 
+            font-weight: 600; 
+            font-size: 1rem; 
+            color: #333; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
+        
+        .consume-info {
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-footer-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #999;
+            flex-wrap: wrap;
+        }
+
+        .remark-tag {
+            background-color: #f0f0f0;
+            color: #666;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .record-right {
+            text-align: right;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+        .record-amount { font-size: 1.2rem; font-weight: 700; color: var(--money-color); line-height: 1.2; }
+        .amount-label { font-size: 0.75rem; color: #999; display: block; margin-top: 2px; }
+
+        .loading, .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="container">
+    <div class="header">
+        <h1>股东提成</h1>
+        <div class="user-info" v-if="authUser.name">
+            <i class="ri-user-smile-line"></i> {{ authUser.name }}
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="summary-label">本月累计 (元)</div>
+                <div class="summary-total">
+                    <span class="symbol">¥</span>{{ formatMoney(monthlyTotalAmount) }}
+                </div>
+            </div>
+            
+            <div class="stat-item right">
+                <div class="summary-label">{{ selectedYear }}年累计 (元)</div>
+                <div class="summary-total">
+                    <span class="symbol">¥</span>{{ formatMoney(yearlyTotalAmount) }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="date-picker-row">
+            <div class="select-wrapper">
+                <select v-model="selectedYear" class="custom-select" @change="fetchYearlyData">
+                    <option v-for="y in yearList" :key="y" :value="y">{{ y }}年</option>
+                </select>
+                <i class="ri-arrow-down-s-line select-arrow"></i>
+            </div>
+            <div class="select-wrapper">
+                <select v-model="selectedMonth" class="custom-select">
+                    <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
+                </select>
+                <i class="ri-arrow-down-s-line select-arrow"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="list-header">
+        <span>{{ selectedMonth }}月入账明细</span>
+        <span class="record-count">共 {{ monthlyList.length }} 笔</span>
+    </div>
+
+    <div v-if="loading" class="loading">
+        <i class="ri-loader-4-line ri-spin" style="font-size: 24px;"></i> 
+        <div style="margin-top:8px">正在加载...</div>
+    </div>
+    
+    <div v-else-if="monthlyList.length === 0" class="empty-state">
+        <i class="ri-inbox-line" style="font-size: 2rem; opacity: 0.5; margin-bottom: 8px; display: block;"></i>
+        {{ selectedYear }}年{{ selectedMonth }}月 暂无提成记录
+    </div>
+
+    <div v-else class="record-list">
+        <div class="record-card" v-for="item in monthlyList" :key="item.id">
+            <div class="client-info">
+                <div class="client-name">
+                    <i class="ri-vip-crown-fill" style="color:#FFC107; font-size:0.9rem"></i>
+                    {{ item.client }}
+                </div>
+                
+                <div class="consume-info">
+                    <i class="ri-wallet-3-line" style="font-size: 0.9rem"></i>
+                    消费: ¥{{ formatMoney(item.consume) }}
+                </div>
+
+                <div class="card-footer-row">
+                    <span>{{ formatDate(item.date) }}</span>
+                    <span v-if="item.remark" class="remark-tag">{{ item.remark }}</span>
+                </div>
+            </div>
+            
+            <div class="record-right">
+                <div class="record-amount">+{{ formatMoney(item.amount) }}</div>
+                <span class="amount-label">提成</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const { authUser, fetchUser } = window.useAuth();
+            const loading = ref(false);
+            
+            // 存储整年的所有数据
+            const fullYearData = ref([]); 
+            
+            const now = new Date();
+            const selectedYear = ref(now.getFullYear());
+            const selectedMonth = ref(now.getMonth() + 1);
+
+            const yearList = computed(() => {
+                const current = new Date().getFullYear();
+                return [current - 2, current - 1, current, current + 1];
+            });
+
+            // === 核心逻辑修改 ===
+            
+            // 1. 本月列表（纯前端从整年数据中过滤）
+            const monthlyList = computed(() => {
+                const m = parseInt(selectedMonth.value);
+                const y = parseInt(selectedYear.value);
+                
+                // 筛选出符合当前选择月份的记录
+                return fullYearData.value.filter(item => {
+                    if (!item.date) return false;
+                    // WPS日期通常是 YYYY/MM/DD 或 YYYY-MM-DD
+                    // 我们判断日期字符串中是否包含 YYYY/MM 或 YYYY-MM
+                    // 为了更严谨，使用正则匹配月份
+                    // 简单做法：把日期里的 / 或 - 统一，然后提取月份
+                    const dateStr = String(item.date).replace(/-/g, '/'); // 统一成 2025/12/24
+                    const targetPrefix = `${y}/${String(m).padStart(2, '0')}`;
+                    return dateStr.startsWith(targetPrefix);
+                });
+            });
+
+            // 2. 本月累计（计算 filteredList）
+            const monthlyTotalAmount = computed(() => {
+                return monthlyList.value.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+            });
+
+            // 3. 本年累计（计算 fullYearData）
+            const yearlyTotalAmount = computed(() => {
+                return fullYearData.value.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+            });
+
+            const formatMoney = (num) => Number(num).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            const formatDate = (d) => {
+                if(!d) return '';
+                return String(d).replace(/-/g, '/').substring(5, 10); 
+            };
+
+            // 请求整年数据
+            const fetchYearlyData = async () => {
+                if (!authUser.phone) return;
+                loading.value = true;
+                fullYearData.value = []; // 清空数据
+                
+                try {
+                    const y = parseInt(selectedYear.value);
+                    
+                    // 构造整年的时间范围: 1月1日 ~ 12月31日
+                    const startDate = `${y}/01/01`;
+                    const endDate = `${y}/12/31`;
+
+                    console.log(`正在获取 ${y} 全年数据...`);
+
+                    const res = await fetch(`./api/history?startDate=${startDate}&endDate=${endDate}`);
+                    const json = await res.json();
+                    
+                    if (json.success && json.data) {
+                        const validData = json.data
+                            .filter(item => item && item.fields)
+                            .map(item => {
+                                const f = item.fields;
+                                return {
+                                    id: item.id,
+                                    date: f['日期'],
+                                    amount: f['金额'],
+                                    client: f['客户'] || f['姓名'] || '散客',
+                                    consume: f['消费金额'] || 0,
+                                    remark: f['备注'] || ''
+                                };
+                            });
+
+                        // 排序：按日期倒序
+                        validData.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        fullYearData.value = validData;
+                        console.log(`获取成功，共 ${validData.length} 条记录`);
+                    }
+                } catch (e) {
+                    console.error("加载失败", e);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            onMounted(async () => {
+                await fetchUser();
+                if (authUser.phone) {
+                    fetchYearlyData(); // 初始加载当前年份的所有数据
+                } else {
+                    alert("请先登录");
+                }
+            });
+
+            return {
+                authUser, loading, 
+                monthlyList, // 导出过滤后的月度列表
+                selectedYear, selectedMonth, yearList,
+                monthlyTotalAmount, yearlyTotalAmount, // 导出两个统计金额
+                fetchYearlyData, formatMoney, formatDate
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

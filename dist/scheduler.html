@@ -10,109 +10,191 @@
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     
     <style>
-        /* CSS 样式保持不变 */
+        /* --- 基础变量保持不变 --- */
         :root {
             --md-sys-color-primary: #6750A4;
-            --md-sys-color-on-primary: #FFFFFF;
             --md-sys-color-primary-container: #EADDFF;
             --md-sys-color-on-primary-container: #21005D;
             --md-sys-color-surface: #FDF8FD;
             --md-sys-color-surface-container: #F3EDF7;
-            --md-sys-color-surface-variant: #E7E0EC;
             --md-sys-color-on-surface: #1C1B1F;
             --md-sys-color-on-surface-variant: #49454F;
-            --md-sys-color-outline: #79747E;
-            --md-sys-color-outline-variant: #CAC4D0;
-            --dept-medical-bg: #E8DEF8;
-            --dept-medical-text: #1D192B;
+            --dept-medical-bg: #E8DEF8; 
+            --dept-medical-dot: #6750A4; /* 新增：医美圆点色 */
             --dept-life-bg: #D7E3FF;
-            --dept-life-text: #001C3B;
-            --radius-l: 24px;
-            --radius-m: 16px;
-            --radius-s: 8px;
-            --radius-full: 9999px;
-            --shadow-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
-            --shadow-2: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+            --dept-life-dot: #00639b;   /* 新增：生美圆点色 */
+            --radius-m: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
         }
+
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Roboto', 'Noto Sans SC', sans-serif; background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); padding: 24px 16px; line-height: 1.5; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
-        .header h1 { font-size: 1.75rem; font-weight: 500; color: var(--md-sys-color-on-surface); display: flex; align-items: center; gap: 12px; margin-right: auto; letter-spacing: -0.5px; }
-        .date-input-wrapper { position: relative; background: var(--md-sys-color-surface-container); border-radius: var(--radius-s); display: flex; align-items: center; padding: 0 12px; height: 48px; min-width: 160px; }
-        .date-input { border: none; background: transparent; font-family: inherit; font-size: 1rem; color: var(--md-sys-color-on-surface); outline: none; width: 100%; cursor: pointer; }
-        .resting-banner { background-color: #FFF4DE; color: #5C430D; padding: 16px; border-radius: var(--radius-m); margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px; font-size: 0.95rem; line-height: 1.4; }
-        .resting-banner i { font-size: 1.2rem; margin-top: 1px; }
-        .filter-tabs { display: flex; gap: 10px; margin-bottom: 32px; overflow-x: auto; padding-bottom: 4px; }
-        .filter-chip { border: 1px solid var(--md-sys-color-outline-variant); background: transparent; padding: 8px 16px; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 500; color: var(--md-sys-color-on-surface-variant); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .filter-chip:hover { background-color: var(--md-sys-color-surface-variant); }
-        .filter-chip.active { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-color: transparent; }
-        .filter-chip.active i { display: block; }
-        .filter-chip i { display: none; font-size: 1.1em; }
-        .schedule-list { display: flex; flex-direction: column; gap: 16px; }
-        .schedule-card { background: #fff; border-radius: var(--radius-l); padding: 20px 24px; display: grid; grid-template-columns: 100px 1fr auto; align-items: center; gap: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
-        .schedule-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: transparent; }
-        .section-time { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-right: 24px; border-right: 1px solid var(--md-sys-color-outline-variant); min-width: 100px; }
-        .time-start { font-size: 1.5rem; font-weight: 700; color: var(--md-sys-color-on-surface); line-height: 1; }
-        .time-end { font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant); margin-top: 4px; }
-        .time-duration { margin-top: 6px; font-size: 0.75rem; background: var(--md-sys-color-surface-container); padding: 2px 8px; border-radius: 4px; color: var(--md-sys-color-on-surface-variant); }
-        .section-main { display: flex; flex-direction: column; gap: 10px; }
-        .client-info { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
-        .client-icon { color: var(--md-sys-color-primary); }
-        .project-list { display: flex; gap: 8px; flex-wrap: wrap; }
-        .tag { padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; display: inline-flex; align-items: center; background-color: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface-variant); }
+        body { font-family: 'Roboto', 'Noto Sans SC', sans-serif; background-color: #f7f9fc; color: #333; padding: 16px 12px; line-height: 1.5; }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        /* --- 头部样式微调 --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+        .header h1 { font-size: 1.4rem; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
+        .date-input-wrapper { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 0 10px; height: 40px; display: flex; align-items: center; }
+        .date-input { border: none; background: transparent; font-size: 0.95rem; outline: none; color: #333; font-family: inherit; }
+
+        /* --- 顶部横幅 --- */
+        .resting-banner { background-color: #FFF8E6; color: #7A5C00; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; font-size: 0.9rem; border: 1px solid #FFEBA8; }
+
+        /* --- 筛选标签 --- */
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .filter-tabs::-webkit-scrollbar { display: none; }
+        .filter-chip { border: 1px solid #e0e0e0; background: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #666; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+        .filter-chip.active { background-color: #333; color: #fff; border-color: #333; font-weight: 500; }
+
+        /* =========================================
+           新版时间轴布局样式 (核心修改)
+           ========================================= */
+        .timeline-container {
+            position: relative;
+            padding-left: 10px; /* 给左侧时间留点呼吸空间 */
+        }
+        
+        /* 垂直连线 */
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 64px; /* 线条位置 */
+            top: 10px;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .timeline-item {
+            position: relative;
+            display: flex;
+            margin-bottom: 20px; /* 条目间距 */
+            z-index: 1;
+        }
+
+        /* 左侧时间列 */
+        .time-col {
+            width: 54px; /* 固定宽度 */
+            flex-shrink: 0;
+            text-align: right;
+            padding-right: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding-top: 2px;
+        }
+
+        .t-start { font-size: 1.1rem; font-weight: 700; color: #1a1a1a; line-height: 1; }
+        .t-end { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+        /* 时间轴上的圆点 */
+        .timeline-dot {
+            position: absolute;
+            left: 59px; /* 调整圆点位置使其压在线上 (64px线位置 - 5px半径) */
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #ccc;
+            z-index: 2;
+        }
+        /* 根据部门区分圆点颜色 */
+        .dot-medical { border-color: var(--dept-medical-dot); }
+        .dot-life { border-color: var(--dept-life-dot); }
+
+        /* 右侧内容气泡 */
+        .content-card {
+            flex: 1;
+            background: #fff;
+            border-radius: var(--radius-m);
+            padding: 12px 14px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #f0f0f0;
+            position: relative;
+            min-width: 0; /* 防止flex子项溢出 */
+        }
+
+        /* 气泡头部：客户名 + 项目 */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+
+        .client-box { display: flex; align-items: center; gap: 6px; }
+        .client-name { font-size: 1.05rem; font-weight: 600; color: #1a1a1a; }
+        .cancel-icon-btn { 
+            color: #ff4d4f; 
+            background: transparent; 
+            border: none; 
+            padding: 4px; 
+            margin-top: -4px; 
+            margin-right: -4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        .cancel-icon-btn:disabled { color: #ddd; }
+
+        /* 项目标签行 */
+        .tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .tag { 
+            font-size: 0.75rem; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            background: #f5f5f5; 
+            color: #555; 
+        }
+        /* 保持原有的颜色逻辑 */
         .tag-水光 { background: #E6F4EA; color: #137333; }
         .tag-光子 { background: #E8F0FE; color: #1967D2; }
         .tag-清洁 { background: #F1F3F4; color: #5F6368; }
-        .section-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; min-width: 120px; }
-        .tech-info { display: flex; align-items: center; gap: 8px; }
-        .tech-avatar { width: 32px; height: 32px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; }
-        .tech-name { font-size: 0.95rem; font-weight: 500; }
-        .dept-wrapper { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-        .dept-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: var(--radius-full); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .dept-medical { background: var(--dept-medical-bg); color: var(--dept-medical-text); }
-        .dept-life { background: var(--dept-life-bg); color: var(--dept-life-text); }
-        .remark-text { font-size: 0.85rem; color: #666; background: #f9f9f9; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
-        .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: var(--radius-l); border: 1px dashed var(--md-sys-color-outline-variant); color: var(--md-sys-color-on-surface-variant); }
-        
-        /* [新增] 取消按钮样式 */
-        .cancel-btn {
-            margin-top: 4px;
-            padding: 4px 12px;
-            background-color: #fff;
-            border: 1px solid #ff4d4f;
-            color: #ff4d4f;
-            border-radius: 16px;
+
+        /* 备注 */
+        .remark-box {
             font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-        .cancel-btn:hover {
-            background-color: #fff1f0;
-        }
-        .cancel-btn:disabled {
-            border-color: #d9d9d9;
-            color: #d9d9d9;
-            cursor: not-allowed;
-            background-color: transparent;
+            color: #666;
+            background: #fafafa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: inline-block;
         }
 
-        @media (max-width: 768px) {
-            body { padding: 16px 12px; }
-            .header h1 { font-size: 1.4rem; }
-            .schedule-card { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
-            .section-time { flex-direction: row; justify-content: space-between; align-items: baseline; border-right: none; border-bottom: 1px solid var(--md-sys-color-surface-variant); padding-right: 0; padding-bottom: 12px; width: 100%; }
-            .time-wrapper { display: flex; align-items: baseline; gap: 8px; }
-            .time-start { font-size: 1.4rem; }
-            .time-end { font-size: 1rem; color: var(--md-sys-color-on-surface-variant); }
-            .time-duration { margin-top: 0; }
-            .section-main { gap: 12px; }
-            .section-right { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px; }
-            .dept-wrapper { justify-content: flex-end; }
+        /* 底部信息栏：技师 + 部门 */
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #f5f5f5;
+            padding-top: 8px;
+            margin-top: 4px;
         }
+
+        .tech-box { display: flex; align-items: center; gap: 6px; }
+        .tech-avatar-xs {
+            width: 20px; height: 20px;
+            background: #e0e0e0;
+            color: #555;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold;
+        }
+        .tech-name { font-size: 0.85rem; color: #444; font-weight: 500; }
+        
+        .duration-badge {
+            font-size: 0.75rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
     </style>
 </head>
 <body>
@@ -120,10 +202,10 @@
 <div id="app" class="container">
     <div class="header">
         <h1>
-            <span style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 6px; border-radius: 12px; display:flex;">
-                <i class="ri-calendar-event-fill"></i>
+            <span style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 6px; border-radius: 8px; display:flex;">
+                <i class="ri-calendar-event-line" style="font-size: 1.1rem"></i>
             </span> 
-            当日预约表
+            当日预约
         </h1>
         <div class="date-input-wrapper">
             <input type="date" class="date-input" v-model="searchDate" @change="loadScheduleData">
@@ -131,52 +213,66 @@
     </div>
 
     <div class="resting-banner" v-if="restingList.length > 0">
-        <i class="ri-information-fill"></i>
-        <div>
-            <div style="font-weight: 600; margin-bottom: 4px;">今日在岗</div>
-            <div style="opacity: 0.9">{{ restingList.join('、') }}</div>
+        <i class="ri-user-star-line"></i>
+        <div style="flex: 1">
+            <div style="font-weight: 600; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 2px; opacity: 0.8;">On Duty</div>
+            <div style="line-height: 1.3">{{ restingList.join('、') }}</div>
         </div>
     </div>
 
     <div class="filter-tabs" v-if="authUser.role !== '美容师'">
         <button class="filter-chip" :class="{ active: currentTab === '全部' }" @click="currentTab = '全部'">
-            <i class="ri-check-line"></i> 全部
+            全部
         </button>
         <button class="filter-chip" :class="{ active: currentTab === '医疗美容' }" @click="currentTab = '医疗美容'">
-            <i class="ri-check-line"></i> 医疗美容
+            医美
         </button>
         <button class="filter-chip" :class="{ active: currentTab === '生活美容' }" @click="currentTab = '生活美容'">
-            <i class="ri-check-line"></i> 生活美容
+            生美
         </button>
     </div>
 
-    <div class="schedule-list">
-        <div v-if="loading" class="empty-state">
-            <i class="ri-loader-4-line ri-spin" style="font-size: 24px;"></i> 
-            <div style="margin-top: 10px">正在同步数据...</div>
-        </div>
+    <div v-if="loading" class="empty-state">
+        <i class="ri-loader-4-line ri-spin" style="font-size: 24px;"></i> 
+        <div style="margin-top: 8px; font-size: 0.9rem;">加载中...</div>
+    </div>
 
-        <div v-else-if="filteredSchedule.length === 0" class="empty-state">
-            <i class="ri-calendar-line" style="font-size: 3rem; color: var(--md-sys-color-outline-variant); margin-bottom: 16px;"></i>
-            <p>该日期暂无预约安排</p>
-        </div>
+    <div v-else-if="filteredSchedule.length === 0" class="empty-state">
+        <i class="ri-calendar-line" style="font-size: 3rem; opacity: 0.3; margin-bottom: 10px;"></i>
+        <p>今日暂无预约</p>
+    </div>
 
-        <div v-else class="schedule-card" v-for="(item, index) in filteredSchedule" :key="index">
-            <div class="section-time">
-                <div class="time-wrapper">
-                    <span class="time-start">{{ item.startTime }}</span>
-                    <span class="time-end" v-if="item.endTime">- {{ item.endTime }}</span>
-                </div>
-                <div class="time-duration">{{ item.duration }} 分钟</div>
+    <div v-else class="timeline-container">
+        <div class="timeline-item" v-for="(item, index) in filteredSchedule" :key="index">
+            
+            <div class="time-col">
+                <span class="t-start">{{ item.startTime }}</span>
+                <span class="t-end" v-if="item.endTime">{{ item.endTime }}</span>
             </div>
 
-            <div class="section-main">
-                <div class="client-info">
-                    <i class="ri-user-smile-fill client-icon"></i>
-                    <span>{{ item.displayClient }}</span>
+            <div class="timeline-dot" 
+                 :class="hasDept(item, '医疗美容') ? 'dot-medical' : 'dot-life'">
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="client-box">
+                        <span class="client-name">{{ item.displayClient }}</span>
+                    </div>
+                    
+                    <button 
+                        v-if="canCancel(item)" 
+                        @click="handleCancel(item)" 
+                        :disabled="item.isCanceling"
+                        class="cancel-icon-btn"
+                        title="取消预约">
+                        <i v-if="item.isCanceling" class="ri-loader-line ri-spin"></i>
+                        <i v-else class="ri-close-circle-line"></i>
+                    </button>
                 </div>
-                <div class="project-list">
-                    <span v-if="item.service.length === 0" class="tag tag-default">无项目</span>
+
+                <div class="tags-row">
+                    <span v-if="item.service.length === 0" class="tag">无项目</span>
                     <span 
                         v-for="(serviceName, sIndex) in item.service" 
                         :key="sIndex"
@@ -185,45 +281,32 @@
                         {{ serviceName }}
                     </span>
                 </div>
-                <div v-if="item.remark" class="remark-text">
-                    <i class="ri-sticky-note-line" style="vertical-align: middle; margin-right: 2px;"></i> 
+
+                <div v-if="item.remark" class="remark-box">
+                    <i class="ri-sticky-note-line" style="vertical-align: -2px;"></i> 
                     {{ item.remark }}
                 </div>
-            </div>
 
-            <div class="section-right">
-                <div class="dept-wrapper">
-                    <span 
-                        v-for="(deptName, dIndex) in item.depts" 
-                        :key="dIndex"
-                        class="dept-badge" 
-                        :class="deptName === '医疗美容' ? 'dept-medical' : 'dept-life'">
-                        {{ deptName }}
-                    </span>
+                <div class="card-footer">
+                    <div class="tech-box">
+                        <div class="tech-avatar-xs">{{ item.tech.charAt(0) }}</div>
+                        <span class="tech-name">{{ item.tech }}</span>
+                    </div>
+                    <div class="duration-badge">
+                        <i class="ri-time-line"></i> {{ item.duration }}m
+                    </div>
                 </div>
-                <div class="tech-info">
-                    <div class="tech-avatar">{{ item.tech.charAt(0) }}</div>
-                    <span class="tech-name">{{ item.tech }}</span>
-                </div>
-
-                <button 
-                    v-if="canCancel(item)" 
-                    @click="handleCancel(item)" 
-                    :disabled="item.isCanceling"
-                    class="cancel-btn">
-                    <i class="ri-delete-bin-line" v-if="!item.isCanceling"></i>
-                    {{ item.isCanceling ? '...' : '取消' }}
-                </button>
             </div>
         </div>
     </div>
 </div>
+
 <script>
     const { createApp, ref, computed, onMounted } = Vue;
 
     createApp({
         setup() {
-            // 【集成】引入 auth.js 的功能
+            // ================= 逻辑部分完全保持不变 =================
             const { authUser, fetchUser, isShareholder, isMe } = window.useAuth();
 
             const getTodayDate = () => {
@@ -268,54 +351,32 @@
                 return [val];
             };
 
-            // [新增] 权限判断函数
             const canCancel = (item) => {
                 const role = authUser.role;
-                // 1. 美容师和护士：无法取消
-                if (role === '美容师' || role === '护士') {
-                    return false;
-                }
-                // 2. 股东：只可取消自己提交的
-                if (role === '股东') {
-                    // 注意：这里依赖于数据表中必须有记录提交人信息的字段
-                    return isMe(item.submitterPhone);
-                }
-                // 3. 其他角色（如管理员）：可以全部取消
+                if (role === '美容师' || role === '护士') return false;
+                if (role === '股东') return isMe(item.submitterPhone);
                 return true;
             };
 
-            // [新增] 取消预约处理函数
             const handleCancel = async (item) => {
-                if (!confirm(`确定要取消【${item.client}】的预约吗？此操作无法撤销。`)) {
-                    return;
-                }
-
+                if (!confirm(`确定要取消【${item.client}】的预约吗？`)) return;
                 if (!item.customId) {
-                    alert("该条数据没有ID，无法执行取消操作。");
+                    alert("无ID，无法取消");
                     return;
                 }
-
                 try {
                     item.isCanceling = true;
-                    // Webhook 地址
-                    
-                    const webhookUrl = './api/cancel_schedule'; // 现在的
+                    const webhookUrl = './api/cancel_schedule';
                     const res = await fetch(webhookUrl, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ "ID": item.customId }) // 传入取消预约的ID
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ "ID": item.customId })
                     });
-
                     if (res.ok) {
-                        alert('取消预约成功');
-                        // 刷新当前列表
+                        alert('取消成功');
                         loadScheduleData();
                     } else {
-                        const errText = await res.text();
-                        console.error('Cancel failed:', errText);
-                        alert('取消失败，请稍后重试');
+                        alert('取消失败');
                     }
                 } catch (e) {
                     console.error(e);
@@ -329,55 +390,40 @@
                 loading.value = true;
                 rawData.value = [];
                 restingList.value = [];
-                
                 try {
                     const apiDateParam = searchDate.value.replace(/-/g, '/');
                     const [scheduleRes, onDutyRes] = await Promise.all([
                         fetch(`${API_URL}?date=${apiDateParam}&b=0`),
                         fetch(`${API_URL}?b=1`)
                     ]);
-
                     const scheduleJson = await scheduleRes.json();
                     const onDutyJson = await onDutyRes.json();
-
                     const scheduleRecords = extractWpsData(scheduleJson);
-                    
                     const validSchedule = scheduleRecords.filter(item => {
                         const f = item.fields || {};
                         return f['客户姓名'] && String(f['客户姓名']).trim() !== '';
                     });
 
-                    // --- 处理预约列表数据 ---
                     let processedData = validSchedule.map(item => {
                         const f = item.fields || {};
-
                         let serviceArr = [];
                         if (Array.isArray(f['项目'])) {
                             serviceArr = f['项目'].map(s => typeof s === 'object' ? s.name : s);
                         } else if (f['项目']) {
                             serviceArr = [f['项目']];
                         }
-
                         const deptArr = parseDepartments(f['部门']);
-
-                        // === 隐私逻辑 (股东特例) ===
                         const realName = f['客户姓名'];
-                        // 获取提交人手机号，兼容多种字段名可能
                         const submitterPhone = f['提交电话'] || f['submitter'] || f['提交人手机'] || ''; 
-                        // [新增] 获取表格中的 ID 字段
                         const customId = f['ID']; 
-
                         let displayClient = realName;
-
-                        // 逻辑：如果是股东，且这条记录不是自己提交的，则屏蔽姓名
                         if (isShareholder.value && !isMe(submitterPhone)) {
                             displayClient = '***';
                         }
-                        
                         return {
-                            id: item.id, // 原始记录ID (可能也是 string)
-                            customId: customId, // [新增] 绑定的业务ID，用于删除
-                            submitterPhone: submitterPhone, // [新增] 用于权限判断
+                            id: item.id,
+                            customId: customId,
+                            submitterPhone: submitterPhone,
                             date: f['日期'] || searchDate.value,
                             client: realName, 
                             displayClient: displayClient, 
@@ -388,33 +434,24 @@
                             endTime: (f['结束时间'] || '').substring(0, 5),
                             duration: f['时长'] ||  0,
                             remark: f['备注'] || '',
-                            isCanceling: false // [新增] UI状态
+                            isCanceling: false
                         };
                     });
-
-                    // 角色过滤逻辑 (美容师只看生活美容)
                     if (authUser.role === '美容师') {
-                        processedData = processedData.filter(item => 
-                            item.depts && item.depts.includes('生活美容')
-                        );
+                        processedData = processedData.filter(item => item.depts && item.depts.includes('生活美容'));
                         currentTab.value = '生活美容'; 
                     }
-
                     rawData.value = processedData;
-
-                    // --- 处理今日在岗人员 (顶部横幅) ---
                     const onDutyRecords = extractWpsData(onDutyJson);
                     const uniqueNames = new Set(); 
                     onDutyRecords.forEach(item => {
                         const f = item.fields || {};
                         const name = f['姓名'];
-                        // 屏蔽名单中的“生美”和“医美”
                         if (name && name !== '无指定' && name !== '生美' && name !== '医美') {
                             uniqueNames.add(name);
                         }
                     });
                     restingList.value = Array.from(uniqueNames);
-
                 } catch (error) {
                     console.error('API Error:', error);
                 } finally {
@@ -424,9 +461,7 @@
 
             const filteredSchedule = computed(() => {
                 if (rawData.value.length === 0) return [];
-
                 return rawData.value.filter(item => {
-                    // 美容师已在 loadScheduleData 中过滤，这里仅响应手动 tab 切换
                     if (currentTab.value === '全部') return true;
                     return item.depts && item.depts.includes(currentTab.value);
                 }).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -437,23 +472,29 @@
                 if (knownTags.includes(name)) return 'tag-' + name;
                 return 'tag-default'; 
             };
+            
+            // 辅助函数：判断是否包含某部门，用于显示圆点颜色
+            const hasDept = (item, deptName) => {
+                return item.depts && item.depts.includes(deptName);
+            };
 
             onMounted(async () => {
-                await fetchUser(); // 先获取用户角色
+                await fetchUser();
                 loadScheduleData();
             });
 
             return {
                 searchDate,
                 currentTab,
-                authUser, // 暴露给模板 (用于 v-if="authUser.role !== ...")
+                authUser,
                 filteredSchedule,
                 restingList,
                 loading,
                 loadScheduleData,
                 getTagClass,
-                canCancel,    // [新增]
-                handleCancel  // [新增]
+                canCancel,
+                handleCancel,
+                hasDept // 导出新加的辅助函数
             }
         }
     }).mount('#app');

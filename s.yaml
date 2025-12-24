@@ -36,6 +36,7 @@ resources:
         SCHEDULER_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-6FUo4O1XWeSymGw4btc1HB/sync_task"
         APP_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-5a8suMGUQYqUWEkvG8ETEQ/sync_task"
         WAGES_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/458235657966/script/V2-3xUGOxuvikv8ZcVyjNpsdz/sync_task"
+        HISTORY_AIR_URL: "https://www.kdocs.cn/api/v3/ide/file/473934948046/script/V2-5K28RlfxPb8lTiN6QY4ITc/sync_task"
         AIRSCRIPT_TOKEN: "1w52WxiFECf2W18lc8JuBY" 
         JWT_SECRET: "dW8wX0kLjO3zE3kDbD5iY4oOxZ0pG6kXsG8xC0jP"
         SMS_API_URL: "https://sms.tang.cafe/api/send-verification" 

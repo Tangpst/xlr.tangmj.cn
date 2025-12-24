@@ -214,8 +214,7 @@
         const apiUrl = '/api/v1';
         const docsContainer = document.getElementById('docsContainer');
         
-        // 1. 定义你要展示的分类块（顺序以此数组为准）
-        // 即使是外链，只要表格里类型填的是“制度”，就会显示在“制度”块里
+        // 1. 定义你要展示的分类块
         const categoryTitles = ['预案', '制度', '表格', '表单', '三证', '其他'];
         
         const categoryIcons = {
@@ -259,13 +258,6 @@
                 if (data && data.success && data.data) {
                     const resultData = data.data;
                     
-                    // === 【核心修改：定义列索引】 ===
-                    // 假设 WPS 表格列顺序如下：
-                    // A列(0): ID
-                    // B列(1): 标题
-                    // C列(2): 类型 (决定在哪个块显示)
-                    // D列(3): Markdown源码 (不用读，详情页才读)
-                    // E列(4): 跳转链接 (如果有值，则覆盖默认行为)
                     const IDX_ID = 0;
                     const IDX_TITLE = 1;
                     const IDX_TYPE = 2;
@@ -277,26 +269,20 @@
                     
                     // 遍历所有数据进行处理
                     resultData.forEach(docRow => {
-                        // 读取类型，如果没有类型默认归为“其他”
                         let type = docRow[IDX_TYPE];
                         if (!type || !categoryTitles.includes(type)) {
                             type = '其他'; 
                         }
                         
-                        // 读取外链（如果 E 列有值）
                         const externalLink = docRow[IDX_LINK];
                         
-                        // 构造每一条文档的数据对象
                         const docObj = {
                             id: docRow[IDX_ID],
                             title: docRow[IDX_TITLE],
-                            // 核心逻辑：如果有外链，link就用外链；否则构造内部渲染页链接
                             link: externalLink ? externalLink : `/article.html?id=${docRow[IDX_ID]}`,
-                            // 标记是否为外链
                             isExternal: !!externalLink
                         };
 
-                        // 放入对应分类
                         if (categorizedData.hasOwnProperty(type)) {
                             categorizedData[type].push(docObj);
                         }
@@ -308,14 +294,11 @@
                     // 遍历分类配置，渲染每个卡片
                     categoryTitles.forEach(title => {
                         const docsInCategory = categorizedData[title] || [];
-                        // 如果该分类没数据且不想显示空块，可以在这里加 if (docsInCategory.length === 0) return;
-                        
                         const iconClass = categoryIcons[title] || 'fa-folder';
                         
                         const docItem = document.createElement('div');
                         docItem.className = 'doc-item';
                         
-                        // 卡片头部 HTML
                         const headerHtml = `
                             <div class="doc-card-header">
                                 <div class="category-icon-box"><i class="fas ${iconClass}"></i></div>
@@ -327,7 +310,6 @@
                         docList.className = 'doc-list';
                         
                         if (docsInCategory.length > 0) {
-                            // 默认显示前 5 条，剩下的折叠
                             const maxInitialItems = 5;
                             const initialItems = docsInCategory.slice(0, maxInitialItems);
                             const hiddenItems = docsInCategory.slice(maxInitialItems);
@@ -337,40 +319,49 @@
                                 const li = document.createElement('li');
                                 if(hidden) li.className = 'hidden-item';
                                 
-                                // 样式判断
                                 const targetAttr = doc.isExternal ? 'target="_blank"' : '';
-                                let icon = 'fa-file-lines'; // 默认文章图标
+                                
+                                // === 修复逻辑开始 ===
+                                let iconFullClass = 'fa-regular fa-file-lines'; // 默认文章图标
                                 let extIconHtml = '';
 
                                 if (doc.isExternal) {
-                                    // 根据后缀给个直观的图标
-                                    if (doc.link.endsWith('.pdf')) icon = 'fa-file-pdf';
-                                    else if (doc.link.endsWith('.xlsx') || doc.link.endsWith('.xls')) icon = 'fa-file-excel';
-                                    else if (doc.link.endsWith('.docx') || doc.link.endsWith('.doc')) icon = 'fa-file-word';
-                                    else icon = 'fa-fa-chain'; // 普通外链
+                                    const linkLower = doc.link.toLowerCase();
+                                    // 检查是否为文件后缀
+                                    if (linkLower.endsWith('.pdf') || 
+                                        linkLower.endsWith('.xlsx') || linkLower.endsWith('.xls') ||
+                                        linkLower.endsWith('.docx') || linkLower.endsWith('.doc') ||
+                                        linkLower.endsWith('.zip') || linkLower.endsWith('.rar') ||
+                                        linkLower.endsWith('.pptx') || linkLower.endsWith('.ppt')) {
+                                        
+                                        // 有后缀 -> 显示下载图标
+                                        iconFullClass = 'fa-solid fa-download';
+                                    } else {
+                                        // 普通链接 -> 显示链接图标 (修复了之前的 typo: fa-fa-chain)
+                                        // 使用 fa-solid 确保图标存在
+                                        iconFullClass = 'fa-solid fa-link';
+                                    }
                                     
-                                    // 右侧显示一个小箭头图标提示是外链
+                                    // 右侧显示箭头
                                     extIconHtml = '<i class="fas fa-arrow-up-right-from-square ext-icon"></i>';
                                 }
+                                // === 修复逻辑结束 ===
 
                                 li.innerHTML = `
                                     <a href="${doc.link}" class="doc-link" ${targetAttr} title="${doc.title}">
-                                        <i class="fa-regular ${icon} doc-icon"></i>
+                                        <i class="${iconFullClass} doc-icon"></i>
                                         <span class="doc-text">${doc.title}</span>
                                         ${extIconHtml}
                                     </a>`;
                                 return li;
                             };
 
-                            // 添加显示的条目
                             initialItems.forEach(doc => docList.appendChild(createItem(doc)));
-                            // 添加隐藏的条目
                             hiddenItems.forEach(doc => docList.appendChild(createItem(doc, true)));
                             
                             docItem.innerHTML = headerHtml;
                             docItem.appendChild(docList);
 
-                            // 如果有隐藏条目，添加展开按钮
                             if (hiddenItems.length > 0) {
                                 const loadMoreContainer = document.createElement('div');
                                 loadMoreContainer.className = 'load-more-container';
@@ -379,19 +370,17 @@
                                 loadMoreBtn.innerHTML = `展开更多 (${hiddenItems.length}) <i class="fas fa-chevron-down"></i>`;
                                 
                                 loadMoreBtn.addEventListener('click', function() {
-                                    // 展开逻辑
                                     docList.querySelectorAll('.hidden-item').forEach(item => {
                                         item.classList.remove('hidden-item');
-                                        item.style.animation = 'fadeIn 0.3s ease'; // 简单的淡入动画
+                                        item.style.animation = 'fadeIn 0.3s ease';
                                     });
-                                    loadMoreContainer.remove(); // 移除按钮
+                                    loadMoreContainer.remove();
                                 });
                                 
                                 loadMoreContainer.appendChild(loadMoreBtn);
                                 docItem.appendChild(loadMoreContainer);
                             }
                         } else {
-                            // 空数据状态
                             docItem.innerHTML = headerHtml + '<div class="loading" style="padding:20px"><span style="opacity:0.6;font-size:0.9rem">暂无文档</span></div>';
                         }
                         

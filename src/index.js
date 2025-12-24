@@ -8,7 +8,7 @@ const { handleSchedulerRequest, handleCancelRequest } = require('./scheduler.js'
 const { Auth, Jwt } = require('./auth.js');
 const { WPS } = require('./wps.js'); 
 const { fetchManualData } = require('./manual_data.js'); 
-const { fetchWagesData } = require('./wages.js'); 
+const { handleHistoryRequest } = require('./history.js');
 
 
 const app = express();
@@ -122,27 +122,6 @@ app.get('/api/app/menu', async (req, res) => {
     } catch (e) { res.status(500).json({ error: '获取菜单失败' }); }
 });
 
-// 工资查询接口
-app.get('/api/wages', async (req, res) => {
-    try {
-        const token = req.cookies.auth_token;
-        if (!token) return res.status(401).json({ error: '未登录' });
-        
-        const user = await Jwt.verify(token, process.env.JWT_SECRET);
-        if (!user || !user.phone) return res.status(401).json({ error: 'Token 无效' });
-
-        const { month } = req.query;
-        if (!month) {
-            return res.status(400).json({ error: '缺少月份参数 (month)' });
-        }
-
-        const data = await fetchWagesData(user.phone, month);
-        res.json({ success: true, data: data });
-    } catch (e) {
-        console.error("❌ 获取工资失败:", e);
-        res.status(500).json({ error: '获取数据失败' });
-    }
-});
 
 // 美容师手工数据接口
 app.get('/api/manual/data', async (req, res) => {
@@ -194,6 +173,40 @@ app.post('/api/cancel_schedule', (req, res) => {
     };
     // 直接使用 express 解析好的 req.body
     sendWorkerResponse(res, handleCancelRequest(mockRequest, req.body));
+});
+// === 新增：查询历史记录接口 ===
+app.get('/api/history', async (req, res) => {
+    try {
+        // 1. 鉴权：获取当前登录用户手机号
+        const token = req.cookies.auth_token;
+        if (!token) return res.status(401).json({ error: '未登录' });
+        
+        const user = await Jwt.verify(token, process.env.JWT_SECRET);
+        if (!user || !user.phone) return res.status(401).json({ error: 'Token 无效' });
+
+        // 2. 获取前端传递的日期参数
+        const { startDate, endDate } = req.query;
+
+        // 简单校验
+        if (!startDate || !endDate) {
+            return res.status(400).json({ error: '缺少日期参数 (startDate, endDate)' });
+        }
+
+        // 3. 调用处理函数
+        // user.phone 来自 Token，确保了用户只能查自己的数据
+        const result = await handleHistoryRequest(startDate, endDate, user.phone);
+
+        // 4. 返回结果
+        if (result.success) {
+            res.json(result);
+        } else {
+            res.status(500).json(result);
+        }
+
+    } catch (e) {
+        console.error("API Error:", e);
+        res.status(500).json({ error: '服务器内部错误' });
+    }
 });
 
 // === 其他接口 ===
