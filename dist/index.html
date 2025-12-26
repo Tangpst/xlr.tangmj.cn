@@ -358,8 +358,8 @@
         // 尝试清除 Cookie (如果不是 HttpOnly)
         document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
-        // 跳转登录页
-        window.location.href = '/login.html';
+        // 跳转登录页，添加logout参数标识是退出操作
+        window.location.href = '/login.html?logout=1';
     }
 
     // 启动

@@ -70,6 +70,110 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// 微信登录接口
+app.post('/api/auth/wechat-login', async (req, res) => {
+    try {
+        const { code } = req.body;
+        if (!code) return res.status(400).send('缺少code参数');
+
+        // 1. 通过code获取openid
+        const openid = await Auth.getWechatOpenId(code);
+        if (!openid) return res.status(400).send('获取openid失败');
+
+        // 2. 通过openid查找绑定的用户
+        const phone = await Auth.getPhoneByOpenId(openid);
+        if (!phone) {
+            // 如果未绑定，返回需要绑定手机号
+            return res.status(200).json({ 
+                success: false, 
+                needBind: true, 
+                openid: openid 
+            });
+        }
+
+        // 3. 验证用户是否还在WPS中存在
+        const userExists = await Auth.checkPhoneInWps(phone);
+        if (!userExists) {
+            // 用户已被删除，清除缓存
+            Auth.clearOpenIdCache(openid, phone);
+            return res.status(403).json({ 
+                success: false, 
+                error: '用户不存在或已被删除' 
+            });
+        }
+
+        // 4. 获取用户信息并生成token
+        const userInfo = await Auth.getUserInfo(phone) || {};
+        if (!userInfo || !userInfo.name) {
+            // 无法获取用户信息，可能已被删除
+            Auth.clearOpenIdCache(openid, phone);
+            return res.status(403).json({ 
+                success: false, 
+                error: '用户信息获取失败' 
+            });
+        }
+        
+        const name = userInfo.name || '员工';
+        const role = userInfo.role || '员工';
+
+        const token = await Jwt.sign({ phone, name, role, openid }, process.env.JWT_SECRET);
+        res.cookie('auth_token', token, { httpOnly: true, secure: false, maxAge: 604800000 });
+        
+        res.json({ success: true, name, role });
+    } catch (e) { 
+        console.error('[Wechat Login Error]', e);
+        res.status(400).send('微信登录失败'); 
+    }
+});
+
+// 微信绑定手机号接口
+app.post('/api/auth/wechat-bind', async (req, res) => {
+    try {
+        const { openid, phone, code } = req.body;
+        if (!openid || !phone || !code) {
+            return res.status(400).send('缺少必要参数');
+        }
+
+        // 1. 验证手机号和验证码
+        const isValid = await Auth.verifyLogin(phone, code);
+        if (!isValid) return res.status(400).send('验证码错误');
+
+        // 2. 检查手机号是否已授权
+        const isAllowed = await Auth.checkPhoneInWps(phone);
+        if (!isAllowed) return res.status(403).send('非内部人员或手机号错误');
+
+        // 3. 绑定openid和手机号
+        await Auth.bindOpenIdToPhone(openid, phone);
+
+        // 4. 获取用户信息并生成token
+        const userInfo = await Auth.getUserInfo(phone) || {};
+        const name = userInfo.name || '员工';
+        const role = userInfo.role || '员工';
+
+        const token = await Jwt.sign({ phone, name, role, openid }, process.env.JWT_SECRET);
+        res.cookie('auth_token', token, { httpOnly: true, secure: false, maxAge: 604800000 });
+        
+        res.json({ success: true, name, role });
+    } catch (e) { 
+        console.error('[Wechat Bind Error]', e);
+        res.status(400).send('绑定失败'); 
+    }
+});
+
+// 微信配置接口（仅返回AppID，不返回Secret）
+app.get('/api/config/wechat-appid', async (req, res) => {
+    try {
+        const appid = process.env.WECHAT_APPID;
+        if (appid) {
+            res.json({ appid });
+        } else {
+            res.status(404).json({ error: '未配置微信AppID' });
+        }
+    } catch (e) {
+        res.status(500).json({ error: '获取配置失败' });
+    }
+});
+
 // 用户信息接口
 app.get('/api/user/info', async (req, res) => {
     try {
@@ -79,14 +183,28 @@ app.get('/api/user/info', async (req, res) => {
         const user = await Jwt.verify(token, process.env.JWT_SECRET);
         
         if (user && user.phone) {
-            let displayName = user.name;
-            let displayRole = user.role;
-
-            if (!displayName || !displayRole) {
-                 const info = await Auth.getUserInfo(user.phone);
-                 displayName = displayName || (info ? info.name : user.phone);
-                 displayRole = displayRole || (info ? info.role : '员工');
+            // 验证用户是否还在WPS中存在
+            const userExists = await Auth.checkPhoneInWps(user.phone);
+            if (!userExists) {
+                // 用户已被删除，清除相关缓存并返回未登录
+                if (user.openid) {
+                    Auth.clearOpenIdCache(user.openid, user.phone);
+                }
+                return res.status(401).json({ error: '用户不存在' });
             }
+
+            // 重新获取用户信息（确保信息是最新的）
+            const userInfo = await Auth.getUserInfo(user.phone);
+            if (!userInfo) {
+                // 无法获取用户信息，可能已被删除
+                if (user.openid) {
+                    Auth.clearOpenIdCache(user.openid, user.phone);
+                }
+                return res.status(401).json({ error: '用户信息获取失败' });
+            }
+
+            const displayName = userInfo.name || user.name || user.phone;
+            const displayRole = userInfo.role || user.role || '员工';
 
             res.json({ 
                 isLoggedIn: true, 
@@ -94,8 +212,13 @@ app.get('/api/user/info', async (req, res) => {
                 name: displayName, 
                 role: displayRole 
             });
-        } else { res.status(401).json({ error: 'Token 无效' }); }
-    } catch (e) { res.status(500).json({ error: '系统错误' }); }
+        } else { 
+            res.status(401).json({ error: 'Token 无效' }); 
+        }
+    } catch (e) { 
+        console.error('[User Info Error]', e);
+        res.status(500).json({ error: '系统错误' }); 
+    }
 });
 
 // 菜单接口
@@ -225,7 +348,10 @@ app.use((req, res, next) => {
     const p = req.path;
     if (p.startsWith('/api')) return next();
     if (p === '/login.html') return next();
-    if (p === '/favicon.ico' || 
+    // 允许微信验证等txt文件直接访问
+    if (p === '/90706fcedf7a98c4d604c7c25e6439f9.txt' || 
+        p === '/MP_verify_FcNmgsq82Ahz44Sh.txt' ||
+        p === '/favicon.ico' || 
         p.match(/\.(png|jpg|jpeg|gif|svg|css|js|map|woff|woff2|ttf)$/i)) {
         return next();
     }

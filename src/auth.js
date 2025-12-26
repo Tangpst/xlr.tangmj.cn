@@ -70,6 +70,135 @@ const Auth = {
     
     MemoryKV.delete(key); 
     return true;
+  },
+
+  // ========== 微信登录相关方法 ==========
+  
+  /**
+   * 通过微信code获取openid
+   * @param {string} code 微信授权code
+   * @returns {string|null} openid
+   */
+  async getWechatOpenId(code) {
+    try {
+      const appid = process.env.WECHAT_APPID;
+      const secret = process.env.WECHAT_SECRET;
+      
+      if (!appid || !secret) {
+        console.error('[Wechat] 缺少微信配置 (WECHAT_APPID 或 WECHAT_SECRET)');
+        return null;
+      }
+
+      const url = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${appid}&secret=${secret}&code=${code}&grant_type=authorization_code`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.errcode) {
+        console.error('[Wechat] 获取openid失败:', data.errmsg);
+        return null;
+      }
+      
+      return data.openid || null;
+    } catch (e) {
+      console.error('[Wechat] 获取openid异常:', e);
+      return null;
+    }
+  },
+
+  /**
+   * 通过openid查找绑定的手机号
+   * @param {string} openid 微信openid
+   * @returns {string|null} 手机号
+   */
+  async getPhoneByOpenId(openid) {
+    try {
+      // 从WPS中查找（优先从WPS获取，确保数据最新）
+      const phone = await WPS.getPhoneByOpenId(openid);
+      
+      if (phone) {
+        // WPS中有数据，同步到内存缓存
+        const key = `wechat:${openid}`;
+        MemoryKV.set(key, { phone, bindTime: Date.now() });
+        return phone;
+      } else {
+        // WPS中没有数据，清除内存缓存（可能已被删除）
+        const key = `wechat:${openid}`;
+        const record = MemoryKV.get(key);
+        if (record && record.phone) {
+          console.log(`[Wechat] WPS中未找到openid，清除内存缓存: ${openid}`);
+          MemoryKV.delete(key);
+          // 同时清除反向索引
+          const reverseKey = `phone:${record.phone}:wechat`;
+          MemoryKV.delete(reverseKey);
+        }
+        return null;
+      }
+    } catch (e) {
+      console.error('[Wechat] 查找手机号失败:', e);
+      return null;
+    }
+  },
+
+  /**
+   * 绑定openid和手机号
+   * @param {string} openid 微信openid
+   * @param {string} phone 手机号
+   */
+  async bindOpenIdToPhone(openid, phone) {
+    try {
+      // 先持久化到WPS
+      const wpsSuccess = await WPS.bindOpenIdToPhone(openid, phone);
+      if (!wpsSuccess) {
+        console.warn('[Wechat] WPS绑定失败，仅使用内存存储');
+      }
+
+      // 同步到内存缓存
+      const key = `wechat:${openid}`;
+      MemoryKV.set(key, { 
+        phone: phone, 
+        bindTime: Date.now() 
+      });
+      
+      // 同时存储反向索引，方便通过手机号查找openid
+      const reverseKey = `phone:${phone}:wechat`;
+      MemoryKV.set(reverseKey, { 
+        openid: openid, 
+        bindTime: Date.now() 
+      });
+
+      console.log(`✅ [Wechat] 绑定成功: ${openid} -> ${phone}`);
+      
+      return true;
+    } catch (e) {
+      console.error('[Wechat] 绑定失败:', e);
+      return false;
+    }
+  },
+
+  /**
+   * 清除openid相关的内存缓存
+   * @param {string} openid 微信openid
+   * @param {string} phone 手机号（可选）
+   */
+  clearOpenIdCache(openid, phone) {
+    try {
+      // 清除openid -> phone的缓存
+      if (openid) {
+        const key = `wechat:${openid}`;
+        MemoryKV.delete(key);
+      }
+      
+      // 清除phone -> openid的反向索引
+      if (phone) {
+        const reverseKey = `phone:${phone}:wechat`;
+        MemoryKV.delete(reverseKey);
+      }
+      
+      console.log(`[Wechat] 已清除缓存: openid=${openid}, phone=${phone}`);
+    } catch (e) {
+      console.error('[Wechat] 清除缓存失败:', e);
+    }
   }
 };
 

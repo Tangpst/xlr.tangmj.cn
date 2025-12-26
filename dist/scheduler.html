@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="星丽仁·医疗美容">
+    <meta property="og:description" content="内部管理系统">
+    <meta property="og:image" content="https://s.tangmj.cn/logo.png">
     <title>当日预约表</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="./js/auth.js"></script>
@@ -346,9 +349,18 @@
             const parseDepartments = (val) => {
                 if (!val) return ['未分类'];
                 if (Array.isArray(val)) {
-                    return val.map(v => (typeof v === 'object' ? v.name : v));
+                    // 处理数组，提取每个元素的值（可能是对象或字符串）
+                    const depts = val.map(v => {
+                        if (typeof v === 'object' && v !== null) {
+                            return v.name || v.value || String(v);
+                        }
+                        return String(v).trim();
+                    }).filter(v => v && v !== ''); // 过滤空值
+                    return depts.length > 0 ? depts : ['未分类'];
                 }
-                return [val];
+                // 处理单个值
+                const deptStr = String(val).trim();
+                return deptStr ? [deptStr] : ['未分类'];
             };
 
             const canCancel = (item) => {
@@ -463,7 +475,16 @@
                 if (rawData.value.length === 0) return [];
                 return rawData.value.filter(item => {
                     if (currentTab.value === '全部') return true;
-                    return item.depts && item.depts.includes(currentTab.value);
+                    // 确保 depts 是数组且不为空
+                    if (!item.depts || !Array.isArray(item.depts) || item.depts.length === 0) {
+                        return false;
+                    }
+                    // 检查部门数组中是否包含当前选择的标签（去除空格后比较）
+                    const normalizedTab = String(currentTab.value).trim();
+                    return item.depts.some(dept => {
+                        const normalizedDept = String(dept).trim();
+                        return normalizedDept === normalizedTab;
+                    });
                 }).sort((a, b) => a.startTime.localeCompare(b.startTime));
             });
             

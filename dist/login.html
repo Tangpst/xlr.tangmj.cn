@@ -2,10 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta property="og:title" content="星丽仁·医疗美容">
+    <meta property="og:description" content="内部管理系统">
+    <meta property="og:image" content="https://s.tangmj.cn/logo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>登录 - 星丽仁系统</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="./js/wechat-auth.js"></script>
     
     <style>
         /* === 核心变量 (直接复制自 daka.html) === */
@@ -216,7 +220,7 @@
     </div>
 
     <div class="submit-area">
-        <button class="btn-submit" onclick="login()">
+        <button class="btn-submit" id="loginBtn" onclick="login()">
             <span id="loginBtnText">进入系统</span>
             <i class="ri-arrow-right-line"></i>
         </button>
@@ -224,6 +228,12 @@
             <i class="ri-error-warning-fill"></i> 
             <span id="msg-text"></span>
         </div>
+    </div>
+
+    <!-- 微信绑定提示（隐藏，需要时显示） -->
+    <div id="wechatBindTip" style="display: none; margin-top: 20px; padding: 16px; background: #E8F5E9; border-radius: 8px; text-align: center; color: #2E7D32; font-size: 14px;">
+        <i class="ri-wechat-fill" style="font-size: 20px; margin-right: 8px;"></i>
+        <span>检测到微信登录，请绑定手机号完成登录</span>
     </div>
 </div>
 
@@ -337,6 +347,111 @@
             login();
         }
     });
+
+    // 微信自动登录
+    let wechatBindOpenId = null;
+    
+    // 检查是否是退出后跳转过来的
+    function isLogoutRedirect() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('logout') === '1';
+    }
+    
+    // 检查URL中是否有微信授权code
+    function hasWechatCode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('code') !== null;
+    }
+    
+    async function tryWechatLogin() {
+        // 如果URL中有微信授权code，说明是微信回调，需要处理（即使是退出后）
+        // 否则如果是退出后跳转过来的，不自动触发微信授权
+        if (isLogoutRedirect() && !hasWechatCode()) {
+            console.log('[Wechat Login] 检测到退出操作，跳过自动微信登录');
+            // 清除URL中的logout参数
+            const url = new URL(window.location.href);
+            url.searchParams.delete('logout');
+            window.history.replaceState({}, '', url);
+            return;
+        }
+        
+        if (!window.wechatAuth || !window.wechatAuth.isWechatBrowser()) {
+            return; // 不在微信环境，跳过
+        }
+
+        const result = await window.wechatAuth.tryWechatAutoLogin();
+        
+        if (result.success) {
+            // 登录成功，清除logout参数并跳转
+            const url = new URL(window.location.href);
+            url.searchParams.delete('logout');
+            window.history.replaceState({}, '', url);
+            window.location.href = '/';
+        } else if (result.needBind) {
+            // 需要绑定手机号，清除logout参数
+            const url = new URL(window.location.href);
+            url.searchParams.delete('logout');
+            window.history.replaceState({}, '', url);
+            
+            wechatBindOpenId = result.openid;
+            document.getElementById('wechatBindTip').style.display = 'block';
+            // 修改登录按钮文字
+            document.getElementById('loginBtnText').innerText = '绑定并登录';
+        } else if (result.reason === 'redirecting') {
+            // 正在跳转到微信授权，这是正常的，不需要处理
+        }
+    }
+
+    // 修改登录函数，支持微信绑定
+    const originalLogin = login;
+    login = async function() {
+        if (wechatBindOpenId) {
+            // 微信绑定模式
+            const phone = document.getElementById('phone').value.trim();
+            const code = document.getElementById('code').value.trim();
+
+            if (!phone || !code) {
+                showError('请输入手机号和验证码');
+                return;
+            }
+
+            const submitBtn = document.querySelector('.btn-submit');
+            const btnText = document.getElementById('loginBtnText');
+            const originalText = btnText.innerText;
+            
+            btnText.innerText = "绑定中...";
+            submitBtn.disabled = true;
+            clearError();
+
+            try {
+                const result = await window.wechatAuth.bindPhone(wechatBindOpenId, phone, code);
+                if (result.success) {
+                    btnText.innerText = "绑定成功";
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                } else {
+                    showError(result.error || '绑定失败，请检查验证码');
+                    submitBtn.disabled = false;
+                    btnText.innerText = originalText;
+                }
+            } catch (e) {
+                showError('绑定请求失败');
+                submitBtn.disabled = false;
+                btnText.innerText = originalText;
+            }
+        } else {
+            // 普通登录模式
+            originalLogin();
+        }
+    };
+
+    // 页面加载时尝试微信登录
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryWechatLogin);
+    } else {
+        tryWechatLogin();
+    }
 </script>
 
 </body>
