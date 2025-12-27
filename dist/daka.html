@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>预约服务</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js" crossorigin="anonymous"></script>
     <script src="./js/auth.js"></script>
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     <link rel="stylesheet" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/font-awesome.css">
@@ -60,6 +60,96 @@
         .add-service-input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .add-service-btn { padding: 8px 12px; background: #eee; border: none; border-radius: 4px; color: #333; cursor: pointer; }
 
+        /* === 确认卡片模态框样式 === */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .confirm-modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .confirm-modal-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .confirm-modal-overlay.show .confirm-modal-card {
+            transform: scale(1);
+        }
+        .confirm-modal-title {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--md-sys-color-on-surface);
+        }
+        .confirm-modal-content {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+            line-height: 1.8;
+            margin-bottom: 24px;
+        }
+        .confirm-modal-item {
+            margin-bottom: 12px;
+        }
+        .confirm-modal-label {
+            display: inline-block;
+            min-width: 80px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .confirm-modal-value {
+            color: var(--md-sys-color-on-surface);
+        }
+        .confirm-modal-date-time {
+            color: #B3261E;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .confirm-modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .confirm-modal-btn {
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .confirm-modal-btn-cancel {
+            background-color: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .confirm-modal-btn-cancel:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+        .confirm-modal-btn-confirm {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+        .confirm-modal-btn-confirm:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
         /* === 成功提示 Toast 样式 === */
         .success-toast {
             position: fixed;
@@ -78,9 +168,11 @@
             z-index: 9999;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.5s ease;
         }
-        .success-toast.show { opacity: 1; }
+        .success-toast.show { 
+            opacity: 1; 
+        }
         .success-toast i { font-size: 20px; color: #4caf50; }
 
         /* =========================================
@@ -205,9 +297,51 @@
         <div v-if="errorMsg" class="error-toast"><i class="ri-error-warning-fill"></i> {{ errorMsg }}</div>
     </div>
 
+    <!-- 确认卡片模态框 -->
+    <div class="confirm-modal-overlay" :class="{ show: showConfirmModal }" @click.self="showConfirmModal = false">
+        <div class="confirm-modal-card">
+            <div class="confirm-modal-title">确认预约信息</div>
+            <div class="confirm-modal-content">
+                <div class="confirm-modal-item">
+                    <span class="confirm-modal-label">客户姓名：</span>
+                    <span class="confirm-modal-value">{{ form.client }}</span>
+                </div>
+                <div class="confirm-modal-item">
+                    <span class="confirm-modal-label">预约日期：</span>
+                    <span class="confirm-modal-value confirm-modal-date-time">{{ form.date }}</span>
+                </div>
+                <div class="confirm-modal-item">
+                    <span class="confirm-modal-label">开始时间：</span>
+                    <span class="confirm-modal-value confirm-modal-date-time">{{ form.startTime }}</span>
+                </div>
+                <div class="confirm-modal-item">
+                    <span class="confirm-modal-label">服务时长：</span>
+                    <span class="confirm-modal-value">{{ form.duration }} 分钟</span>
+                </div>
+                <div class="confirm-modal-item" v-if="form.selectedTechs.length > 0">
+                    <span class="confirm-modal-label">选择技师：</span>
+                    <span class="confirm-modal-value">{{ form.selectedTechs.map(t => t.name).join('、') }}</span>
+                </div>
+                <div class="confirm-modal-item" v-if="form.services.length > 0">
+                    <span class="confirm-modal-label">服务项目：</span>
+                    <span class="confirm-modal-value">{{ form.services.join('、') }}</span>
+                </div>
+                <div class="confirm-modal-item" v-if="form.notes">
+                    <span class="confirm-modal-label">备注：</span>
+                    <span class="confirm-modal-value">{{ form.notes }}</span>
+                </div>
+            </div>
+            <div class="confirm-modal-actions">
+                <button class="confirm-modal-btn confirm-modal-btn-cancel" @click="showConfirmModal = false">取消</button>
+                <button class="confirm-modal-btn confirm-modal-btn-confirm" @click="confirmSubmit">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功提示 Toast -->
     <div class="success-toast" :class="{ show: showSuccessToast }">
         <i class="ri-checkbox-circle-fill"></i>
-        <span>预约成功！</span>
+        <span>预约成功！<br>可在【预约查询】查看本人提交的预约信息</span>
     </div>
 </div>
 
@@ -227,7 +361,8 @@
             const loadingTechs = ref(false);
             const submitting = ref(false);
             const errorMsg = ref('');
-            const showSuccessToast = ref(false); 
+            const showSuccessToast = ref(false);
+            const showConfirmModal = ref(false); 
 
             const getToday = () => {
                 const d = new Date();
@@ -374,7 +509,14 @@
                 });
             };
 
-            const handleSubmit = async () => {
+            const handleSubmit = () => {
+                // 显示确认卡片
+                showConfirmModal.value = true;
+            };
+
+            const confirmSubmit = async () => {
+                // 关闭确认卡片
+                showConfirmModal.value = false;
                 submitting.value = true;
                 errorMsg.value = '';
                 
@@ -416,7 +558,7 @@
                         showSuccessToast.value = true;
                         setTimeout(() => {
                             showSuccessToast.value = false;
-                        }, 2000); 
+                        }, 3000); 
 
                         form.client = '';
                         form.selectedTechs = [];
@@ -452,12 +594,14 @@
                 submitting, 
                 errorMsg, 
                 newServiceInput, 
-                showSuccessToast, 
+                showSuccessToast,
+                showConfirmModal,
                 addService, 
                 toggleTech, 
                 isTechSelected, 
                 toggleService, 
-                handleSubmit, 
+                handleSubmit,
+                confirmSubmit,
                 isValid, 
                 fetchDailyData
             };
