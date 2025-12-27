@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/favicon.ico">
     <title>病例打印系统</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -258,23 +259,30 @@
         /* --- 病历单据样式 (A4纸模拟) --- */
         .medical-record {
             width: 210mm;
+            height: 297mm;
             background: white;
             padding: 10mm;
             box-sizing: border-box;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* 稍微优化阴影使其更立体 */
             position: relative;
             color: #000;
-            font-family: "SimSun", "Songti SC", serif; /* 确保纸张内部强制使用宋体 */
-            margin-bottom: 80px; /* 给底部悬浮按钮留出空间 */
+            font-family: "NSimSun", "新宋体", "SimSun", serif; /* 使用新宋体 */
+            margin-bottom: 20px; /* 给底部悬浮按钮留出空间 */
         }
 
         /* 标题部分 */
         .header { 
-            text-align: center; 
             border-bottom: 3px solid #000; 
-            padding-bottom: 10px; 
-            margin-bottom: 10px; 
+            padding-top: 20px;
+            padding-bottom: 15px; 
+            margin-bottom: 15px; 
             position: relative; 
+        }
+        .header img {
+            display: block;
+        }
+        .header > div {
+            text-align: center;
         }
         .header h1 { 
             font-size: 18px; 
@@ -392,7 +400,7 @@
         /* ---------------------------------------------------------------------- */
         /* 打印专用样式 (严格保留原样) */
         /* ---------------------------------------------------------------------- */
-            @media print {
+        @media print {
             body {
                 background: white; height: auto; display: block; overflow: visible;
                 font-size: 10pt !important; margin: 0; padding: 0;
@@ -407,7 +415,7 @@
             }
             .medical-record[style*="display: none"] { display: none !important; }
             
-            * { color: #000 !important; box-sizing: border-box; font-family: "SimSun", "Songti SC", serif !important; }
+            * { color: #000 !important; box-sizing: border-box; font-family: "NSimSun", "新宋体", "SimSun", serif !important; }
             
             .medical-record, .medical-record .row, .medical-record .label, 
             .medical-record .input-line, .medical-record .footer-item {
@@ -476,8 +484,8 @@
 
         <!-- 初诊病例模板 -->
         <div class="medical-record" id="initialRecordArea" style="display: none;">
-            <div class="header" style="display: flex; align-items: center;">
-                <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/LOGO.jpg" alt="Logo" style="height: 60px; margin-right: 20px;">
+            <div class="header">
+                <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/LOGO.jpg" alt="Logo" style="height: 55px; margin-bottom: 10px;">
                 <div>
                     <h1>病历记录（初诊）</h1>
                     <div class="tag">初诊</div>
@@ -674,9 +682,12 @@
                 <span class="input-line" contenteditable="true"></span>
             </div>
 
-            <div class="row" style="margin-bottom: 15px;">
+            <div class="row">
                 <span class="label">辅助检查结果：（可附页）</span>
                 <span class="input-line w-long" id="initialAuxCheck" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
             </div>
 
             <div class="row">
@@ -687,9 +698,15 @@
                 <span class="input-line" contenteditable="true"></span>
             </div>
 
-            <div class="row" style="margin-bottom: 15px;">
+            <div class="row">
                 <span class="label">治疗方案：</span>
                 <span class="input-line w-long" id="initialTreatmentPlan" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
+            </div>
+            <div class="row full-line" style="margin-bottom: 15px;">
+                <span class="input-line" contenteditable="true"></span>
             </div>
 
             <div class="row">
@@ -721,8 +738,8 @@
 
         <!-- 复诊病例模板 -->
         <div class="medical-record" id="recordArea">
-            <div class="header" style="display: flex; align-items: center;">
-                <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/LOGO.jpg" alt="Logo" style="height: 60px; margin-right: 20px;">
+            <div class="header">
+                <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/LOGO.jpg" alt="Logo" style="height: 55px; margin-bottom: 10px;">
                 <div>
                     <h1>病历记录（复诊）</h1>
                     <div class="tag">复诊</div>
@@ -766,9 +783,6 @@
             <div class="row full-line">
                 <span class="input-line" contenteditable="true"></span>
             </div>
-            <div class="row full-line">
-                <span class="input-line" contenteditable="true"></span>
-            </div>
             <div class="row full-line" style="margin-bottom: 15px;">
                 <span class="input-line" contenteditable="true"></span>
             </div>
@@ -804,6 +818,9 @@
             <div class="row"> 
                 <span class="label">专科检查：</span>
                 <span class="input-line w-long" id="examDetails" contenteditable="true"></span>
+            </div>
+            <div class="row full-line">
+                <span class="input-line" contenteditable="true"></span>
             </div>
             <div class="row full-line">
                 <span class="input-line" contenteditable="true"></span>
@@ -944,7 +961,7 @@
                         if (currentType === 'initial') {
                             clearInitialRecordArea();
                         } else {
-                            clearRecordArea();
+                        clearRecordArea(); 
                         }
                     }
                 } else {
@@ -1008,15 +1025,30 @@
             });
         }
 
-        function measureAndFillMultiLine(startElementId, numLines, text) {
+        function measureAndFillMultiLine(startElementId, maxLines, text) {
             const startElement = document.getElementById(startElementId);
             if (!startElement) return;
+            if (!text || !text.trim()) {
+                // 如果文本为空，清空所有行
+                const currentParent = startElement.closest('.row');
+                let nextRow = currentParent.nextElementSibling;
+                document.getElementById(startElementId).innerText = '';
+                for(let i = 1; i < maxLines; i++) {
+                    if (nextRow && nextRow.classList.contains('full-line')) {
+                        const inputSpan = nextRow.querySelector('.input-line');
+                        if (inputSpan) inputSpan.innerText = '';
+                        nextRow = nextRow.nextElementSibling;
+                    } else break;
+                }
+                return;
+            }
 
             const allLines = [startElement];
             let currentParent = startElement.closest('.row'); 
             let nextRow = currentParent.nextElementSibling;
             
-            for(let i = 1; i < numLines; i++) {
+            // 收集所有可用的行（最多maxLines行）
+            for(let i = 1; i < maxLines; i++) {
                 if (nextRow && nextRow.classList.contains('full-line')) {
                     const inputSpan = nextRow.querySelector('.input-line');
                     if (inputSpan) allLines.push(inputSpan); else break; 
@@ -1024,43 +1056,77 @@
                 nextRow = nextRow.nextElementSibling;
             }
 
-            const availableWidth = startElement.offsetWidth; 
-            if (availableWidth <= 0) {
+            if (allLines.length === 0) return;
+            
+            // 强制布局，确保元素尺寸已计算
+            startElement.offsetHeight;
+            
+            // 获取每行的实际可用宽度（考虑 padding）
+            const getLineWidth = (line) => {
+                const style = window.getComputedStyle(line);
+                const paddingLeft = parseFloat(style.paddingLeft) || 0;
+                const paddingRight = parseFloat(style.paddingRight) || 0;
+                const width = line.offsetWidth || line.getBoundingClientRect().width;
+                return Math.max(0, width - paddingLeft - paddingRight);
+            };
+            
+            const lineWidths = allLines.map(getLineWidth);
+
+            if (lineWidths[0] <= 0) {
                 allLines.forEach(line => line.innerText = '');
                 return;
             }
 
             const measuringSpan = document.createElement('span');
             const computedStyle = window.getComputedStyle(startElement);
-            ['fontFamily','fontSize','fontWeight','letterSpacing','padding'].forEach(p => measuringSpan.style[p] = computedStyle[p]);
+            ['fontFamily','fontSize','fontWeight','letterSpacing'].forEach(p => {
+                measuringSpan.style[p] = computedStyle[p];
+            });
             measuringSpan.style.whiteSpace = 'nowrap';
             measuringSpan.style.visibility = 'hidden';
             measuringSpan.style.position = 'absolute';
+            measuringSpan.style.display = 'inline-block';
+            measuringSpan.style.padding = '0';
             document.body.appendChild(measuringSpan);
 
             let remainingText = text.replace(/\s+/g, ' ').trim(); 
             const chunks = [];
 
-            for (let i = 0; i < numLines && remainingText.length > 0; i++) {
+            // 根据内容自动填充，直到内容填完或达到最大行数
+            for (let i = 0; i < allLines.length && remainingText.length > 0; i++) {
+                const availableWidth = lineWidths[i] || lineWidths[lineWidths.length - 1];
                 let lineText = '';
                 let left = 0, right = remainingText.length, maxLength = 0;
                 
+                // 使用二分查找确定每行的最大字符数
                 while (left <= right) {
                     const mid = Math.floor((left + right) / 2);
                     measuringSpan.textContent = remainingText.substring(0, mid);
-                    if (measuringSpan.offsetWidth <= availableWidth) {
+                    const measuredWidth = measuringSpan.offsetWidth || measuringSpan.getBoundingClientRect().width;
+                    if (measuredWidth <= availableWidth - 1) { // 留1px余量避免溢出
                         maxLength = mid;
                         left = mid + 1;
-                    } else right = mid - 1;
+                    } else {
+                        right = mid - 1;
+                    }
                 }
                 
-                if (maxLength === 0 && remainingText.length > 0) maxLength = 1;
+                // 如果没有找到合适的长度，至少放一个字符
+                if (maxLength === 0 && remainingText.length > 0) {
+                    maxLength = 1;
+                }
+                
                 lineText = remainingText.substring(0, maxLength);
                 remainingText = remainingText.substring(maxLength).trimStart();
                 chunks.push(lineText);
             }
+            
             document.body.removeChild(measuringSpan);
-            allLines.forEach((line, idx) => line.innerText = chunks[idx] !== undefined ? chunks[idx] : '');
+            
+            // 只填充实际需要的行，其他行留空
+            allLines.forEach((line, idx) => {
+                line.innerText = chunks[idx] !== undefined ? chunks[idx] : '';
+            });
         }
 
         function selectPatient(index) {
@@ -1211,9 +1277,9 @@
             fillMulti('initialChiefComplaint', 3, ['chiefComplaint', '主诉（就诊意愿）：', '主诉']);
             fillMulti('initialHistory', 3, ['history', '现病史']);
             fillMulti('initialExamDetails', 3, ['examDetails', '专科检查']);
-            fillMulti('initialAuxCheck', 1, ['auxCheck', '辅助检查结果']);
+            fillMulti('initialAuxCheck', 2, ['auxCheck', '辅助检查结果']);
             fillMulti('initialDiagnosis', 2, ['diagnosis', '诊断']);
-            fillMulti('initialTreatmentPlan', 1, ['treatment', '治疗方案', '处理方案']);
+            fillMulti('initialTreatmentPlan', 3, ['treatment', '治疗方案', '处理方案']);
             fillMulti('initialPrecautions', 2, ['precautions', '注意事项']);
 
             const nextVisit = getStringValue(data.nextVisitPlan) || getStringValue(data['复诊计划']);
@@ -1256,16 +1322,16 @@
             setVal('vBpLow', ['vBpLow', '血压低压']);
             setVal('docSign', ['docSign', '医师签字']);
 
-            // Fill multi-line fields
-            const fillMulti = (id, lines, keys, prefix='') => {
+            // Fill multi-line fields (maxLines 表示最大可用行数，函数会根据内容自动填充)
+            const fillMulti = (id, maxLines, keys, prefix='') => {
                 let val = '';
                 for(let k of keys) { val = getStringValue(data[k]); if(val) break; }
-                measureAndFillMultiLine(id, lines, prefix + val);
+                measureAndFillMultiLine(id, maxLines, prefix + val);
             };
 
             fillMulti('chiefComplaint', 5, ['chiefComplaint', '主诉（就诊意愿）：', '主诉']);
-            fillMulti('history', 5, ['history', '现病史'], '求美者自述');
-            fillMulti('examDetails', 3, ['examDetails', '专科检查']);
+            fillMulti('history', 4, ['history', '现病史'], '求美者自述');
+            fillMulti('examDetails', 4, ['examDetails', '专科检查']);
             fillMulti('auxCheck', 2, ['auxCheck', '辅助检查结果']);
             fillMulti('diagnosis', 2, ['diagnosis', '诊断']);
             fillMulti('treatmentPlan', 3, ['treatment', '治疗方案', '处理方案']);
