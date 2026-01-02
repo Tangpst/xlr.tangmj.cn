@@ -259,7 +259,7 @@
         /* --- 病历单据样式 (A4纸模拟) --- */
         .medical-record {
             width: 210mm;
-            height: 297mm;
+          
             background: white;
             padding: 10mm;
             box-sizing: border-box;
@@ -267,7 +267,7 @@
             position: relative;
             color: #000;
             font-family: "NSimSun", "新宋体", "SimSun", serif; /* 使用新宋体 */
-            margin-bottom: 20px; /* 给底部悬浮按钮留出空间 */
+            margin-bottom: 80px; /* 给底部悬浮按钮留出空间 */
         }
 
         /* 标题部分 */
@@ -379,10 +379,16 @@
             text-align: center;
             line-height: 12px;
             font-size: 10px;
+            cursor: pointer;
         }
         .checkbox-marker.checked::after {
             content: '✓';
             font-weight: bold;
+        }
+        /* 勾选框标签可点击 */
+        .checkbox-label {
+            cursor: pointer;
+            user-select: none;
         }
         
         /* 可编辑区域交互 (保持原样，只优化鼠标样式) */
@@ -431,6 +437,58 @@
             .full-line .input-line { min-height: 18pt; line-height: 1.3 !important; }
 
             @page { size: A4 portrait; margin: 5mm !important; }
+            
+            /* 初诊病历打印优化 - 压缩间距以适应A4纸 */
+            #initialRecordArea .header {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+                margin-bottom: 8px !important;
+            }
+            #initialRecordArea .header img {
+                height: 40px !important;
+                margin-bottom: 5px !important;
+            }
+            #initialRecordArea .header h1 {
+                font-size: 14pt !important;
+                letter-spacing: 3px !important;
+            }
+            #initialRecordArea .row {
+                margin-bottom: 2px !important;
+            }
+            #initialRecordArea .row[style*="margin-bottom: 10px"] {
+                margin-bottom: 4px !important;
+            }
+            #initialRecordArea .row[style*="margin-bottom: 15px"] {
+                margin-bottom: 6px !important;
+            }
+            #initialRecordArea .two-columns {
+                gap: 6px !important;
+                margin-bottom: 4px !important;
+            }
+            #initialRecordArea .full-line {
+                margin-bottom: 2px !important;
+            }
+            #initialRecordArea .full-line[style*="margin-bottom: 15px"] {
+                margin-bottom: 6px !important;
+            }
+            #initialRecordArea .input-line {
+                min-height: 16pt !important;
+                line-height: 1.2 !important;
+            }
+            #initialRecordArea .full-line .input-line {
+                min-height: 16pt !important;
+                line-height: 1.2 !important;
+            }
+            #initialRecordArea .row[style*="margin-bottom: 40px"] {
+                margin-bottom: 12px !important;
+            }
+            #initialRecordArea .footer {
+                margin-top: 15px !important;
+                font-size: 9pt !important;
+            }
+            #initialRecordArea .label {
+                font-size: 9pt !important;
+            }
         }
     </style>
 </head>
@@ -911,6 +969,8 @@
                 const visitType = getStringValue(item['初/复诊']) || getStringValue(item.visitType) || '';
                 return visitType.includes(filterValue);
             });
+            // 按就诊时间倒序排序
+            patientData = sortByVisitTime(patientData);
             renderList(patientData);
             
             if (patientData.length > 0) {
@@ -948,6 +1008,8 @@
                     }
                     
                     allPatientData = allRecords.map(item => ({...item.fields, id: item.id}));
+                    // 按就诊时间倒序排序
+                    allPatientData = sortByVisitTime(allPatientData);
                     filterAndRenderData();
                     
                     if (patientData.length > 0) {
@@ -985,6 +1047,23 @@
         function clearInitialRecordArea() {
             document.querySelectorAll('#initialRecordArea .input-line, #initialRecordArea .footer-line').forEach(el => el.innerText = '');
             document.querySelectorAll('#initialRecordArea .checkbox-marker').forEach(el => el.classList.remove('checked'));
+            // 默认选中"无"
+            const defaultNoneCheckboxes = [
+                'initialTraumaNone', 'initialHypertensionNone', 'initialDiabetesNone',
+                'initialHeartNone', 'initialLungNone', 'initialLiverNone',
+                'initialKidneyNone', 'initialSkinNone', 'initialAllergyNone',
+                'initialAestheticNone', 'initialHobbyNone'
+            ];
+            defaultNoneCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) checkbox.classList.add('checked');
+            });
+            // 默认选中"否"
+            const defaultNoCheckboxes = ['initialScarNo', 'initialPregnancyPrepNo'];
+            defaultNoCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) checkbox.classList.add('checked');
+            });
         }
 
         function searchPatient() {
@@ -996,8 +1075,144 @@
             if (e.key === 'Enter') searchPatient();
         });
 
+        // 初始化勾选框交互
+        function initCheckboxInteractions() {
+            // 处理"无/有"类型的互斥勾选框组
+            const noneYesGroups = [
+                ['initialTraumaNone', 'initialTraumaYes'],
+                ['initialHypertensionNone', 'initialHypertensionYes'],
+                ['initialDiabetesNone', 'initialDiabetesYes'],
+                ['initialHeartNone', 'initialHeartYes'],
+                ['initialLungNone', 'initialLungYes'],
+                ['initialLiverNone', 'initialLiverYes'],
+                ['initialKidneyNone', 'initialKidneyYes'],
+                ['initialSkinNone', 'initialSkinYes'],
+                ['initialAllergyNone', 'initialAllergyYes'],
+                ['initialAestheticNone', 'initialAestheticYes'],
+                ['initialHobbyNone', 'initialHobbyYes']
+            ];
+
+            noneYesGroups.forEach(([noneId, yesId]) => {
+                const noneCheckbox = document.getElementById(noneId);
+                const yesCheckbox = document.getElementById(yesId);
+                
+                if (noneCheckbox && yesCheckbox) {
+                    // 点击"无"
+                    noneCheckbox.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        noneCheckbox.classList.add('checked');
+                        yesCheckbox.classList.remove('checked');
+                    });
+                    // 点击"无"的父span
+                    if (noneCheckbox.parentElement) {
+                        noneCheckbox.parentElement.classList.add('checkbox-label');
+                        noneCheckbox.parentElement.addEventListener('click', function(e) {
+                            if (e.target !== noneCheckbox && e.target !== yesCheckbox) {
+                                e.preventDefault();
+                                noneCheckbox.classList.add('checked');
+                                yesCheckbox.classList.remove('checked');
+                            }
+                        });
+                    }
+                    
+                    // 点击"有"
+                    yesCheckbox.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        yesCheckbox.classList.add('checked');
+                        noneCheckbox.classList.remove('checked');
+                    });
+                    // 点击"有"的父span
+                    if (yesCheckbox.parentElement) {
+                        yesCheckbox.parentElement.classList.add('checkbox-label');
+                        yesCheckbox.parentElement.addEventListener('click', function(e) {
+                            if (e.target !== yesCheckbox && e.target !== noneCheckbox) {
+                                e.preventDefault();
+                                yesCheckbox.classList.add('checked');
+                                noneCheckbox.classList.remove('checked');
+                            }
+                        });
+                    }
+                }
+            });
+
+            // 处理"是/否"类型的互斥勾选框组
+            const yesNoGroups = [
+                ['initialScarYes', 'initialScarNo'],
+                ['initialPregnancyPrepYes', 'initialPregnancyPrepNo']
+            ];
+
+            yesNoGroups.forEach(([yesId, noId]) => {
+                const yesCheckbox = document.getElementById(yesId);
+                const noCheckbox = document.getElementById(noId);
+                
+                if (yesCheckbox && noCheckbox) {
+                    // 点击"是"
+                    yesCheckbox.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        yesCheckbox.classList.add('checked');
+                        noCheckbox.classList.remove('checked');
+                    });
+                    if (yesCheckbox.parentElement) {
+                        yesCheckbox.parentElement.classList.add('checkbox-label');
+                        yesCheckbox.parentElement.addEventListener('click', function(e) {
+                            if (e.target !== yesCheckbox && e.target !== noCheckbox) {
+                                e.preventDefault();
+                                yesCheckbox.classList.add('checked');
+                                noCheckbox.classList.remove('checked');
+                            }
+                        });
+                    }
+                    
+                    // 点击"否"
+                    noCheckbox.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        noCheckbox.classList.add('checked');
+                        yesCheckbox.classList.remove('checked');
+                    });
+                    if (noCheckbox.parentElement) {
+                        noCheckbox.parentElement.classList.add('checkbox-label');
+                        noCheckbox.parentElement.addEventListener('click', function(e) {
+                            if (e.target !== noCheckbox && e.target !== yesCheckbox) {
+                                e.preventDefault();
+                                noCheckbox.classList.add('checked');
+                                yesCheckbox.classList.remove('checked');
+                            }
+                        });
+                    }
+                }
+            });
+
+            // 处理家族史的独立勾选框（可以多选）
+            const familyCheckboxes = [
+                'initialFamilyGenetic',
+                'initialFamilyInfectious',
+                'initialFamilyTrauma'
+            ];
+
+            familyCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        checkbox.classList.toggle('checked');
+                    });
+                    if (checkbox.parentElement) {
+                        checkbox.parentElement.classList.add('checkbox-label');
+                        checkbox.parentElement.addEventListener('click', function(e) {
+                            if (e.target !== checkbox) {
+                                e.preventDefault();
+                                checkbox.classList.toggle('checked');
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
         window.onload = function() {
             document.getElementById('date-display').innerText = new Date().toLocaleDateString('zh-CN');
+            // 初始化勾选框交互
+            initCheckboxInteractions();
             // 默认显示复诊
             switchType('followup');
             fetchPatientData();
@@ -1006,6 +1221,24 @@
         function getStringValue(value) {
             if (Array.isArray(value)) return value.map(v => (v !== null && v !== undefined ? String(v) : '')).join(' ');
             return (value !== undefined && value !== null) ? String(value) : '';
+        }
+
+        // 按就诊时间倒序排序（最新的在前）
+        function sortByVisitTime(data) {
+            return [...data].sort((a, b) => {
+                const timeA = getStringValue(a.visitTime) || getStringValue(a['就诊时间']) || getStringValue(a['就诊日期']) || '';
+                const timeB = getStringValue(b.visitTime) || getStringValue(b['就诊时间']) || getStringValue(b['就诊日期']) || '';
+                
+                const dateA = new Date(timeA);
+                const dateB = new Date(timeB);
+                
+                // 倒序：日期大的（最新的）在前
+                if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+                if (isNaN(dateA.getTime())) return 1;
+                if (isNaN(dateB.getTime())) return -1;
+                
+                return dateB.getTime() - dateA.getTime();
+            });
         }
 
         function renderList(data) {
@@ -1185,11 +1418,17 @@
                 const noneEl = document.getElementById(noneId);
                 const yesEl = document.getElementById(yesId);
                 const detailEl = document.getElementById(detailId);
+                // 清除所有勾选状态
+                if (noneEl) noneEl.classList.remove('checked');
+                if (yesEl) yesEl.classList.remove('checked');
                 if (val && val.trim()) {
                     if (yesEl) yesEl.classList.add('checked');
                     if (detailEl) detailEl.innerText = val;
+                } else {
+                    // 如果没有值，默认选中"无"
+                    if (noneEl) noneEl.classList.add('checked');
+                    if (detailEl) detailEl.innerText = '';
                 }
-                // 移除默认勾选"无"的逻辑
             };
 
             setCheckbox('initialTraumaNone', 'initialTraumaYes', 'initialTraumaDetail', ['traumaHistory', '外伤及手术史']);
@@ -1205,12 +1444,23 @@
 
             // 瘢痕体质
             const scarVal = getStringValue(data.scarDiathesis) || getStringValue(data['瘢痕体质']);
+            const scarYesEl = document.getElementById('initialScarYes');
+            const scarNoEl = document.getElementById('initialScarNo');
+            const scarOtherEl = document.getElementById('initialScarOther');
+            if (scarYesEl) scarYesEl.classList.remove('checked');
+            if (scarNoEl) scarNoEl.classList.remove('checked');
             if (scarVal && scarVal.includes('是')) {
-                document.getElementById('initialScarYes')?.classList.add('checked');
+                if (scarYesEl) scarYesEl.classList.add('checked');
+                if (scarOtherEl) scarOtherEl.innerText = '';
             } else if (scarVal && scarVal.includes('否')) {
-                document.getElementById('initialScarNo')?.classList.add('checked');
+                if (scarNoEl) scarNoEl.classList.add('checked');
+                if (scarOtherEl) scarOtherEl.innerText = '';
             } else if (scarVal) {
-                document.getElementById('initialScarOther').innerText = scarVal;
+                if (scarOtherEl) scarOtherEl.innerText = scarVal;
+                if (scarNoEl) scarNoEl.classList.add('checked'); // 默认选中"否"
+            } else {
+                if (scarNoEl) scarNoEl.classList.add('checked'); // 默认选中"否"
+                if (scarOtherEl) scarOtherEl.innerText = '';
             }
 
             // 家族史
@@ -1232,11 +1482,18 @@
 
             // 特殊嗜好
             const hobby = getStringValue(data.hobby) || getStringValue(data['特殊嗜好']);
+            const hobbyNoneEl = document.getElementById('initialHobbyNone');
+            const hobbyYesEl = document.getElementById('initialHobbyYes');
+            const hobbyDetailEl = document.getElementById('initialHobbyDetail');
+            if (hobbyNoneEl) hobbyNoneEl.classList.remove('checked');
+            if (hobbyYesEl) hobbyYesEl.classList.remove('checked');
             if (hobby && hobby.trim()) {
-                document.getElementById('initialHobbyYes')?.classList.add('checked');
-                document.getElementById('initialHobbyDetail').innerText = hobby;
+                if (hobbyYesEl) hobbyYesEl.classList.add('checked');
+                if (hobbyDetailEl) hobbyDetailEl.innerText = hobby;
+            } else {
+                if (hobbyNoneEl) hobbyNoneEl.classList.add('checked');
+                if (hobbyDetailEl) hobbyDetailEl.innerText = '';
             }
-            // 移除默认勾选"无"的逻辑
 
             // 末次经史
             const lastMenstrual = getStringValue(data.lastMenstrual) || getStringValue(data['末次经史']);
@@ -1261,10 +1518,15 @@
 
             // 是否备孕
             const pregnancyPrep = getStringValue(data.pregnancyPrep) || getStringValue(data['是否备孕']);
+            const pregnancyPrepYesEl = document.getElementById('initialPregnancyPrepYes');
+            const pregnancyPrepNoEl = document.getElementById('initialPregnancyPrepNo');
+            if (pregnancyPrepYesEl) pregnancyPrepYesEl.classList.remove('checked');
+            if (pregnancyPrepNoEl) pregnancyPrepNoEl.classList.remove('checked');
             if (pregnancyPrep && pregnancyPrep.includes('是')) {
-                document.getElementById('initialPregnancyPrepYes')?.classList.add('checked');
-            } else if (pregnancyPrep && pregnancyPrep.includes('否')) {
-                document.getElementById('initialPregnancyPrepNo')?.classList.add('checked');
+                if (pregnancyPrepYesEl) pregnancyPrepYesEl.classList.add('checked');
+            } else {
+                // 默认选中"否"
+                if (pregnancyPrepNoEl) pregnancyPrepNoEl.classList.add('checked');
             }
 
             // Fill multi-line fields

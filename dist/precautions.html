@@ -55,26 +55,6 @@
             margin: 0 auto;
         }
 
-        /* === 头部区域 === */
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 32px;
-            padding: 8px 4px;
-        }
-
-        .brand-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo {
-            height: 48px;
-            width: auto;
-            object-fit: contain;
-        }
 
 
         /* === 标题区域 === */
@@ -763,12 +743,6 @@
 </head>
 <body>
 
-    <header class="header">
-        <div class="brand-area">
-            <img src="https://xingliren.oss-cn-hangzhou.aliyuncs.com/img/logo.png" alt="Logo" class="logo">
-        </div>
-    </header>
-
     <main>
         <h1 class="page-title">
             <i class="fa-solid fa-clipboard-list"></i>
@@ -1063,20 +1037,26 @@
                 logoContainer.appendChild(logoImg);
                 tempContainer.appendChild(logoContainer);
                 
-                // 如果输入了客户姓名，添加个性化文字（在标题左上方）
+                // 添加提示文字（在标题左上方）
                 let personalizedText = null;
+                personalizedText = document.createElement('div');
+                personalizedText.style.padding = '16px 24px 8px';
+                personalizedText.style.fontSize = '14px';
+                personalizedText.style.lineHeight = '1.6';
+                personalizedText.style.color = '#49454F';
+                personalizedText.style.textAlign = 'left';
+                personalizedText.style.backgroundColor = '#ffffff';
+                
+                // 根据是否输入客户姓名显示不同内容
                 if (customerName && customerName.trim()) {
-                    personalizedText = document.createElement('div');
-                    personalizedText.style.padding = '16px 24px 8px';
-                    personalizedText.style.fontSize = '14px';
-                    personalizedText.style.lineHeight = '1.6';
-                    personalizedText.style.color = '#49454F';
-                    personalizedText.style.textAlign = 'left';
-                    personalizedText.style.backgroundColor = '#ffffff';
-                    // 姓名加粗并用紫色显示，逗号改为冒号
+                    // 有姓名：显示"亲爱的XXX：..."
                     personalizedText.innerHTML = `亲爱的<span style="font-weight: bold; color: #6750A4;">${customerName}</span>：为了确保最佳的治疗效果和您的安全，请务必仔细阅读并遵守以下护理说明。祝您恢复顺利，越来越美！`;
-                    tempContainer.appendChild(personalizedText);
+                } else {
+                    // 无姓名：显示"为了确保...请务必仔细阅读 | | 并遵守..."
+                    personalizedText.innerHTML = `为了确保最佳的治疗效果和您的安全，请务必仔细阅读 | | 并遵守以下护理说明。祝您恢复顺利，越来越美！`;
                 }
+                
+                tempContainer.appendChild(personalizedText);
                 
                 // 克隆并添加 header（只包含标题，移除按钮）
                 const clonedHeader = document.createElement('div');

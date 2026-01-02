@@ -10,6 +10,7 @@
     <title>当日预约表</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="./js/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/remixicon.css" rel="stylesheet">
     <link href="https://xingliren.oss-cn-hangzhou.aliyuncs.com/assets/google-fonts.css" rel="stylesheet">
     
@@ -36,11 +37,52 @@
         .container { max-width: 800px; margin: 0 auto; }
 
         /* --- 头部样式微调 --- */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
-        .header h1 { font-size: 1.4rem; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
-        .header-right { display: flex; align-items: center; gap: 8px; }
-        .date-input-wrapper { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 0 10px; height: 40px; display: flex; align-items: center; }
-        .date-input { border: none; background: transparent; font-size: 0.95rem; outline: none; color: #333; font-family: inherit; }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            margin-bottom: 20px; 
+            gap: 12px; 
+            flex-wrap: wrap;
+        }
+        .header h1 { 
+            font-size: 1.4rem; 
+            font-weight: 600; 
+            color: #1a1a1a; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            flex: 1;
+            min-width: 0;
+        }
+        .header h1 .refresh-btn {
+            display: none; /* 桌面端隐藏，在header-right中显示 */
+        }
+        .header-right { 
+            display: flex; 
+            align-items: flex-start; 
+            gap: 8px; 
+            flex-shrink: 0;
+        }
+        .date-input-wrapper { 
+            background: #fff; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            padding: 0 10px; 
+            height: 40px; 
+            display: flex; 
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .date-input { 
+            border: none; 
+            background: transparent; 
+            font-size: 0.95rem; 
+            outline: none; 
+            color: #333; 
+            font-family: inherit; 
+            width: 100%; 
+        }
         .refresh-btn { 
             background: #fff; 
             border: 1px solid #e0e0e0; 
@@ -69,9 +111,176 @@
         .refresh-btn.refreshing i {
             animation: spin 1s linear infinite;
         }
+        .export-btn { 
+            background: #fff; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            width: 40px; 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            color: #666;
+            margin-left: 8px;
+        }
+        .export-btn:hover { 
+            background: #f5f5f5; 
+            border-color: #ccc;
+            color: var(--md-sys-color-primary);
+        }
+        .export-btn:active { 
+            transform: scale(0.95); 
+        }
+        .export-btn i {
+            font-size: 1.2rem;
+        }
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+        
+        /* 日期控件包装器 */
+        .date-controls-wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        /* 日期导航按钮组 */
+        .date-nav-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 0;
+            flex-shrink: 0;
+        }
+        .date-nav-btn {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+        .date-nav-btn:not(.today) {
+            min-width: 80px;
+        }
+        .date-nav-btn:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+            color: var(--md-sys-color-primary);
+        }
+        .date-nav-btn:active {
+            transform: scale(0.95);
+        }
+        .date-nav-btn.today {
+            background: var(--md-sys-color-primary-container);
+            border-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary-container);
+            font-weight: 500;
+        }
+        .date-nav-btn.today:hover {
+            background: var(--md-sys-color-primary);
+            color: #fff;
+        }
+
+        /* 移动端响应式优化 */
+        @media (max-width: 640px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .header h1 {
+                font-size: 1.2rem;
+                margin-bottom: 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+            }
+            .header h1 .refresh-btn,
+            .header h1 .export-btn {
+                display: flex; /* 移动端显示在标题栏 */
+                width: 36px;
+                height: 36px;
+            }
+            .header h1 .export-btn {
+                margin-left: auto;
+            }
+            .header-right {
+                width: 100%;
+                flex-direction: row;
+                gap: 8px;
+                align-items: center;
+            }
+            .header-right .refresh-btn,
+            .header-right .export-btn {
+                display: none; /* 移动端隐藏header-right中的刷新和导出按钮 */
+            }
+            .date-controls-wrapper {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+                min-width: 0;
+            }
+            .date-input-wrapper {
+                flex: 0 0 auto;
+                max-width: 140px;
+                min-width: 120px;
+            }
+            .date-input {
+                font-size: 0.9rem;
+            }
+            .date-nav-buttons {
+                display: flex;
+                gap: 6px;
+                margin-top: 0;
+                flex-shrink: 0;
+                flex: 1;
+                justify-content: flex-end;
+            }
+            .date-nav-btn {
+                font-size: 0.85rem;
+                padding: 8px 10px;
+                white-space: nowrap;
+            }
+            .date-nav-btn:not(.today) {
+                min-width: 40px;
+                padding: 8px;
+                justify-content: center;
+            }
+            .date-nav-btn:not(.today) span {
+                display: none; /* 移动端上一日和下一日只显示图标 */
+            }
+            .date-nav-btn.today {
+                padding: 8px 12px;
+                flex-shrink: 0;
+            }
+        }
+
+        /* 小屏幕进一步优化 */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            .date-nav-btn {
+                padding: 10px 8px;
+            }
         }
 
         /* --- 顶部横幅 --- */
@@ -232,6 +441,111 @@
         }
 
         .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+
+        /* === 图片预览弹窗 === */
+        .image-preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .image-preview-content {
+            background-color: #fff;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        .image-preview-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .image-preview-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .image-preview-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .image-preview-close:hover {
+            background-color: #f5f5f5;
+        }
+
+        .image-preview-body {
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-height: calc(90vh - 120px);
+        }
+
+        .image-preview-body img {
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+            width: auto;
+            display: block;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: default;
+        }
+
+        .image-preview-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+        }
+
+        .image-preview-tip {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -242,15 +556,62 @@
             <span style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 6px; border-radius: 8px; display:flex;">
                 <i class="ri-calendar-event-line" style="font-size: 1.1rem"></i>
             </span> 
-            当日预约
+            <span>当日预约</span>
+            <div style="display: flex; align-items: center; margin-left: auto; gap: 8px;">
+                <button class="export-btn" @click="handleExport" title="导出图片">
+                    <i class="ri-image-line"></i>
+                </button>
+                <button class="refresh-btn" :class="{ refreshing: loading }" @click="handleRefresh" title="刷新数据">
+                    <i class="ri-refresh-line"></i>
+                </button>
+            </div>
         </h1>
         <div class="header-right">
-            <div class="date-input-wrapper">
-                <input type="date" class="date-input" v-model="searchDate" @change="loadScheduleData">
+            <div class="date-controls-wrapper">
+                <div class="date-input-wrapper">
+                    <input type="date" class="date-input" v-model="searchDate" @change="loadScheduleData">
+                </div>
+                <div class="date-nav-buttons">
+                    <button class="date-nav-btn" @click="goToPreviousDay" title="上一日">
+                        <i class="ri-arrow-left-line"></i>
+                        <span>上一日</span>
+                    </button>
+                    <button class="date-nav-btn today" @click="goToToday" title="今天">
+                        <i class="ri-calendar-check-line"></i>
+                        <span>今天</span>
+                    </button>
+                    <button class="date-nav-btn" @click="goToNextDay" title="下一日">
+                        <i class="ri-arrow-right-line"></i>
+                        <span>下一日</span>
+                    </button>
+                </div>
             </div>
-            <button class="refresh-btn" :class="{ refreshing: loading }" @click="handleRefresh" title="刷新数据">
-                <i class="ri-refresh-line"></i>
-            </button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="export-btn" @click="handleExport" title="导出图片">
+                    <i class="ri-image-line"></i>
+                </button>
+                <button class="refresh-btn" :class="{ refreshing: loading }" @click="handleRefresh" title="刷新数据">
+                    <i class="ri-refresh-line"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览弹窗 -->
+    <div id="imagePreviewModal" class="image-preview-overlay" v-show="showImagePreview">
+        <div class="image-preview-content">
+            <div class="image-preview-header">
+                <h3>长按图片分享</h3>
+                <button class="image-preview-close" @click="closeImagePreview">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="image-preview-body">
+                <img :src="previewImageUrl" alt="预约表图片" v-if="previewImageUrl">
+            </div>
+            <div class="image-preview-footer">
+                <p class="image-preview-tip">长按图片即可保存到相册或分享</p>
+            </div>
         </div>
     </div>
 
@@ -365,6 +726,10 @@
             const restingList = ref([]);
             const loading = ref(false);
             const API_URL = './api/scheduler';
+            
+            // 图片预览相关
+            const showImagePreview = ref(false);
+            const previewImageUrl = ref('');
 
             const extractWpsData = (json) => {
                 if (!json || !json.success) return [];
@@ -410,6 +775,33 @@
             };
 
             const handleRefresh = () => {
+                loadScheduleData();
+            };
+
+            // 日期导航功能
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const goToPreviousDay = () => {
+                const currentDate = new Date(searchDate.value);
+                currentDate.setDate(currentDate.getDate() - 1);
+                searchDate.value = formatDate(currentDate);
+                loadScheduleData();
+            };
+
+            const goToToday = () => {
+                searchDate.value = getTodayDate();
+                loadScheduleData();
+            };
+
+            const goToNextDay = () => {
+                const currentDate = new Date(searchDate.value);
+                currentDate.setDate(currentDate.getDate() + 1);
+                searchDate.value = formatDate(currentDate);
                 loadScheduleData();
             };
 
@@ -542,6 +934,60 @@
                 return item.depts && item.depts.includes(deptName);
             };
 
+            // 导出图片功能
+            const handleExport = async () => {
+                // 检查 html2canvas 是否加载
+                if (typeof html2canvas === 'undefined') {
+                    alert('图片生成功能加载失败，请刷新页面重试');
+                    return;
+                }
+
+                try {
+                    // 获取要截图的元素（整个app容器）
+                    const appContainer = document.getElementById('app');
+                    if (!appContainer) {
+                        alert('无法找到页面内容');
+                        return;
+                    }
+
+                    // 使用 html2canvas 生成图片
+                    const canvas = await html2canvas(appContainer, {
+                        backgroundColor: '#f7f9fc',
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        allowTaint: true,
+                        removeContainer: false,
+                        imageTimeout: 15000,
+                        scrollX: 0,
+                        scrollY: -window.scrollY
+                    });
+
+                    // 将 canvas 转换为图片 URL
+                    const imageUrl = canvas.toDataURL('image/png', 0.95);
+                    
+                    // 显示图片预览弹窗
+                    previewImageUrl.value = imageUrl;
+                    showImagePreview.value = true;
+                    
+                    // 阻止背景滚动
+                    document.body.style.overflow = 'hidden';
+                    
+                } catch (error) {
+                    console.error('生成图片失败:', error);
+                    alert('生成图片失败：' + error.message);
+                }
+            };
+
+            // 关闭图片预览弹窗
+            const closeImagePreview = () => {
+                showImagePreview.value = false;
+                previewImageUrl.value = '';
+                
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+            };
+
             onMounted(async () => {
                 await fetchUser();
                 loadScheduleData();
@@ -559,7 +1005,14 @@
                 getTagClass,
                 canCancel,
                 handleCancel,
-                hasDept // 导出新加的辅助函数
+                hasDept,
+                goToPreviousDay,
+                goToToday,
+                goToNextDay,
+                handleExport,
+                showImagePreview,
+                previewImageUrl,
+                closeImagePreview
             }
         }
     }).mount('#app');
