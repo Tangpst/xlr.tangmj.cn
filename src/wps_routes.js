@@ -51,6 +51,20 @@ async function handleWpsRequest(request, requestBody) {
     }
     
     payload = { Context: { argv, sheet_name: "绩效" } };
+  }
+  else if (url.pathname === "/api/v5") {
+    air_url = process.env.PRECAUTIONS_AIR_URL;
+    // 获取 project 参数
+    const projectSearch = searchParams.get('project');
+    // 只有当 project 参数存在且不为空字符串时才传递
+    if (projectSearch !== null && projectSearch !== '') {
+      argv = { project: projectSearch };
+    } else {
+      // 传递空字符串表示获取所有数据
+      argv = { project: '' };
+    }
+    payload = { Context: { argv, sheet_name: "注意事项" } };
+    console.log('[WPS Routes] /api/v5 请求参数:', JSON.stringify(payload, null, 2));
   } else {
     return null; 
   }
@@ -67,6 +81,12 @@ async function handleWpsRequest(request, requestBody) {
     });
 
     const body = await res.json();
+    
+    // 添加日志以便调试
+    if (url.pathname === "/api/v5") {
+      console.log('[WPS Routes] /api/v5 WPS 原始返回:', JSON.stringify(body, null, 2));
+    }
+    
     let result = body?.data?.result ?? null;
 
     if (typeof result === "string") {
@@ -76,7 +96,48 @@ async function handleWpsRequest(request, requestBody) {
     // --- 3. 结果处理 (核心修改) ---
     let responseData;
     
-    if (url.pathname === "/api/v4") {
+    if (url.pathname === "/api/v5") {
+      // 特殊处理 /api/v5 - 根据实际数据结构处理
+      // 检查是否有错误
+      if (body.error) {
+        console.error('[WPS Routes] /api/v5 WPS 脚本执行错误:', body.error);
+        console.error('[WPS Routes] /api/v5 错误详情:', JSON.stringify(body.error_details, null, 2));
+        return createJsonParams({
+          success: false,
+          error: body.error,
+          error_details: body.error_details,
+          message: "WPS 脚本执行失败"
+        }, 500);
+      }
+      
+      // WPS 可能返回: [{records: [...]}] 或 body.data.result = [{records: [...]}]
+      let finalData = null;
+      
+      // 情况1: body.data.result 存在且不为 null
+      if (result !== null && result !== undefined) {
+        finalData = result;
+      } 
+      // 情况2: body.data 直接是数组
+      else if (body.data && Array.isArray(body.data)) {
+        finalData = body.data;
+      }
+      // 情况3: body 直接是数组
+      else if (Array.isArray(body)) {
+        finalData = body;
+      }
+      // 情况4: body.result 存在
+      else if (body.result !== null && body.result !== undefined) {
+        finalData = body.result;
+      }
+      
+      console.log('[WPS Routes] /api/v5 提取的数据:', JSON.stringify(finalData, null, 2));
+      
+      responseData = {
+        success: true,
+        data: finalData,
+        message: "请求成功"
+      };
+    } else if (url.pathname === "/api/v4") {
       const inputCode = requestBody && requestBody.code;
 
       // 如果是自动登录模式 (AUTO_LOGIN)

@@ -174,6 +174,278 @@ app.get('/api/config/wechat-appid', async (req, res) => {
     }
 });
 
+// 微信JS-SDK配置缓存（内存缓存）
+const wechatConfigCache = {
+    accessToken: null,
+    accessTokenExpire: 0,
+    jsapiTicket: null,
+    jsapiTicketExpire: 0
+};
+
+// 获取access_token（带缓存）
+async function getAccessToken(appid, secret) {
+    const now = Date.now();
+    
+    // 如果缓存有效，直接返回
+    if (wechatConfigCache.accessToken && now < wechatConfigCache.accessTokenExpire) {
+        console.log('[Wechat Config] 使用缓存的access_token');
+        return wechatConfigCache.accessToken;
+    }
+    
+    try {
+        console.log('[Wechat Config] 获取新的access_token');
+        const tokenUrl = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appid}&secret=${secret}`;
+        const tokenRes = await fetch(tokenUrl);
+        const tokenData = await tokenRes.json();
+        
+        if (tokenData.errcode) {
+            console.error('[Wechat Config] 获取access_token失败:', tokenData);
+            
+            // 特殊处理IP白名单错误
+            if (tokenData.errcode === 40164) {
+                throw new Error('IP白名单限制: 服务器IP未在微信公众平台白名单中，请在微信公众平台添加IP: 47.96.100.205');
+            }
+            
+            throw new Error('获取access_token失败: ' + (tokenData.errmsg || tokenData.errcode));
+        }
+        
+        // 缓存access_token，有效期7200秒，提前5分钟过期
+        wechatConfigCache.accessToken = tokenData.access_token;
+        wechatConfigCache.accessTokenExpire = now + (tokenData.expires_in - 300) * 1000;
+        
+        return tokenData.access_token;
+    } catch (error) {
+        console.error('[Wechat Config] 获取access_token异常:', error);
+        throw error;
+    }
+}
+
+// 获取jsapi_ticket（带缓存）
+async function getJsapiTicket(accessToken) {
+    const now = Date.now();
+    
+    // 如果缓存有效，直接返回
+    if (wechatConfigCache.jsapiTicket && now < wechatConfigCache.jsapiTicketExpire) {
+        console.log('[Wechat Config] 使用缓存的jsapi_ticket');
+        return wechatConfigCache.jsapiTicket;
+    }
+    
+    try {
+        console.log('[Wechat Config] 获取新的jsapi_ticket');
+        const ticketUrl = `https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=${accessToken}`;
+        const ticketRes = await fetch(ticketUrl);
+        const ticketData = await ticketRes.json();
+        
+        if (ticketData.errcode !== 0) {
+            console.error('[Wechat Config] 获取jsapi_ticket失败:', ticketData);
+            throw new Error('获取jsapi_ticket失败: ' + (ticketData.errmsg || ticketData.errcode));
+        }
+        
+        // 缓存jsapi_ticket，有效期7200秒，提前5分钟过期
+        wechatConfigCache.jsapiTicket = ticketData.ticket;
+        wechatConfigCache.jsapiTicketExpire = now + (ticketData.expires_in - 300) * 1000;
+        
+        return ticketData.ticket;
+    } catch (error) {
+        console.error('[Wechat Config] 获取jsapi_ticket异常:', error);
+        throw error;
+    }
+}
+
+// 微信JS-SDK配置接口（用于分享功能）
+app.get('/api/wechat/config', async (req, res) => {
+    try {
+        const appid = process.env.WECHAT_APPID;
+        const secret = process.env.WECHAT_SECRET;
+        
+        if (!appid || !secret) {
+            console.warn('[Wechat Config] 未配置微信AppID或Secret');
+            return res.status(404).json({ 
+                success: false, 
+                error: '未配置微信AppID或Secret' 
+            });
+        }
+
+        // 生成随机字符串和时间戳
+        const nonceStr = Math.random().toString(36).substring(2, 15) + 
+                        Math.random().toString(36).substring(2, 15);
+        const timestamp = Math.floor(Date.now() / 1000);
+        
+        // 获取access_token（带缓存）
+        const accessToken = await getAccessToken(appid, secret);
+        
+        // 获取jsapi_ticket（带缓存）
+        const jsapiTicket = await getJsapiTicket(accessToken);
+        
+        // 生成签名
+        const url = req.query.url || req.headers.referer || '';
+        if (!url) {
+            console.warn('[Wechat Config] URL参数为空');
+        }
+        
+        const signString = `jsapi_ticket=${jsapiTicket}&noncestr=${nonceStr}&timestamp=${timestamp}&url=${url}`;
+        
+        // 使用crypto生成sha1签名
+        const crypto = require('crypto');
+        const signature = crypto.createHash('sha1').update(signString).digest('hex');
+        
+        console.log('[Wechat Config] 配置生成成功，URL:', url.substring(0, 50) + '...');
+        
+        res.json({
+            success: true,
+            config: {
+                appId: appid,
+                timestamp: timestamp,
+                nonceStr: nonceStr,
+                signature: signature
+            }
+        });
+    } catch (e) {
+        console.error('[Wechat Config Error]', e);
+        console.error('[Wechat Config Error Stack]', e.stack);
+        
+        // 如果是IP白名单错误，返回特殊错误码，让前端知道可以使用降级方案
+        const isIpWhitelistError = e.message && e.message.includes('IP白名单');
+        
+        res.status(500).json({ 
+            success: false, 
+            error: '获取微信配置失败: ' + (e.message || '未知错误'),
+            errorCode: isIpWhitelistError ? 'IP_WHITELIST_ERROR' : 'UNKNOWN_ERROR',
+            fallback: true, // 提示前端可以使用降级方案（复制文字）
+            details: process.env.NODE_ENV === 'development' ? e.stack : undefined
+        });
+    }
+});
+
+// 项目注意事项接口
+app.get('/api/precautions/projects', async (req, res) => {
+    try {
+        // 获取查询参数 project
+        const projectParam = req.query.project || '';
+        
+        // 从 WPS 获取项目注意事项数据
+        const apiUrl = `/api/v5${projectParam ? `?project=${encodeURIComponent(projectParam)}` : ''}`;
+        const mockRequest = {
+            url: `${req.protocol}://${req.get('host')}${apiUrl}`,
+            method: 'GET',
+            headers: { get: (name) => req.get(name) },
+        };
+        
+        const workerResponse = await handleWpsRequest(mockRequest, {});
+        const responseText = await workerResponse.text();
+        let wpsData;
+        
+        try {
+            wpsData = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('[Projects API] JSON解析失败:', parseError);
+            console.error('[Projects API] 原始响应:', responseText);
+            return res.json({ success: true, data: [] });
+        }
+        
+        console.log('[Projects API] WPS 原始数据:', JSON.stringify(wpsData, null, 2));
+        
+        // 处理 WPS 返回的数据 - 根据实际数据结构处理
+        let records = [];
+        
+        // 数据结构：可能是 [{records: [...]}] 或 {success: true, data: [{records: [...]}]}
+        if (wpsData && wpsData.success && wpsData.data) {
+            // 情况1: {success: true, data: [{records: [...]}]}
+            if (Array.isArray(wpsData.data) && wpsData.data.length > 0) {
+                const firstItem = wpsData.data[0];
+                if (firstItem && firstItem.records && Array.isArray(firstItem.records)) {
+                    records = firstItem.records;
+                } else if (Array.isArray(firstItem)) {
+                    records = firstItem;
+                } else {
+                    records = wpsData.data;
+                }
+            } else if (wpsData.data.records && Array.isArray(wpsData.data.records)) {
+                records = wpsData.data.records;
+            } else if (wpsData.data.result) {
+                const result = wpsData.data.result;
+                if (Array.isArray(result) && result.length > 0 && result[0].records) {
+                    records = result[0].records;
+                } else if (Array.isArray(result)) {
+                    records = result;
+                } else if (result.records && Array.isArray(result.records)) {
+                    records = result.records;
+                }
+            }
+        } else if (Array.isArray(wpsData)) {
+            // 情况2: 直接是数组 [{records: [...]}]
+            if (wpsData.length > 0 && wpsData[0].records && Array.isArray(wpsData[0].records)) {
+                records = wpsData[0].records;
+            } else {
+                records = wpsData;
+            }
+        } else if (wpsData && wpsData.records && Array.isArray(wpsData.records)) {
+            // 情况3: {records: [...]}
+            records = wpsData.records;
+        }
+        
+        console.log('[Projects API] 提取到的记录数:', records.length);
+        console.log('[Projects API] 第一条记录示例:', records.length > 0 ? JSON.stringify(records[0], null, 2) : '无记录');
+        
+        if (!Array.isArray(records) || records.length === 0) {
+            console.warn('[Projects API] 没有找到有效记录，原始数据结构:', JSON.stringify(wpsData, null, 2));
+            return res.json({ success: true, data: [] });
+        }
+        
+        // 将 WPS 数据格式转换为前端需要的格式
+        const projects = records.map((item, index) => {
+            // 处理不同的数据结构 - 根据实际数据，item 应该是 {fields: {...}, id: "..."}
+            let fields = item;
+            if (item.fields) {
+                fields = item.fields;
+            } else if (item.record && item.record.fields) {
+                fields = item.record.fields;
+            }
+            
+            // 字段映射：ID -> id, 项目 -> name, 注意事项 -> precautions, 图标 -> icon
+            const id = fields['ID'] || fields['id'] || fields['Id'] || fields['序号'] || (index + 1);
+            const name = fields['项目'] || fields['项目名称'] || fields['name'] || fields['名称'] || '未命名项目';
+            const precautions = fields['注意事项'] || fields['precautions'] || fields['内容'] || '';
+            const iconField = fields['图标'] || fields['icon'] || fields['Icon'] || fields['图标URL'] || '';
+            
+            // 处理图标：如果是 Font Awesome 类名，直接使用；如果是 URL，需要特殊处理
+            let icon = 'fa-solid fa-clipboard-list'; // 默认图标
+            if (iconField) {
+                const iconStr = String(iconField).trim();
+                // 如果包含 fa- 或 fas 等，说明是 Font Awesome 类名
+                if (iconStr.includes('fa-') || iconStr.includes('fas ') || iconStr.includes('fa-solid')) {
+                    icon = iconStr;
+                } else if (iconStr.startsWith('http')) {
+                    // 如果是 URL，使用默认图标（后续可以扩展支持图片）
+                    icon = 'fa-solid fa-image';
+                } else if (iconStr.length > 0) {
+                    // 尝试作为 Font Awesome 类名
+                    icon = iconStr.startsWith('fa-') ? iconStr : `fa-solid fa-${iconStr}`;
+                }
+            }
+            
+            return {
+                id: typeof id === 'string' ? (parseInt(id.replace(/\D/g, '')) || (index + 1)) : (id || (index + 1)),
+                name: String(name || '未命名项目'),
+                icon: icon,
+                precautions: String(precautions || '')
+            };
+        }).filter(item => item.name && item.name !== '未命名项目' && item.name.trim() !== ''); // 过滤空数据
+        
+        console.log('[Projects API] 转换后的项目数:', projects.length);
+        
+        res.json({ success: true, data: projects });
+    } catch (e) {
+        console.error('[Projects API Error]', e);
+        console.error('[Projects API Error Stack]', e.stack);
+        // 出错时返回空数组，前端会使用备用数据
+        res.json({ 
+            success: true, 
+            data: [] 
+        });
+    }
+});
+
 // 用户信息接口
 app.get('/api/user/info', async (req, res) => {
     try {
@@ -334,7 +606,7 @@ app.get('/api/history', async (req, res) => {
 
 // === 其他接口 ===
 
-app.all(['/api/v1', '/api/v2', '/api/v3', '/api/v4'], (req, res) => {
+app.all(['/api/v1', '/api/v2', '/api/v3', '/api/v4', '/api/v5'], (req, res) => {
     const mockRequest = {
         url: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
         method: req.method,
